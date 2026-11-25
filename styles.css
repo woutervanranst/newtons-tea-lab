@@ -92,7 +92,7 @@ body::before {
 
 /* Keyboard accessibility focus ring */
 button:focus-visible,
-input[type="range"]:focus-visible {
+.svg-slider-widget:focus-visible {
   outline: 3.5px solid #2591E6;
   outline-offset: 2px;
 }
@@ -306,18 +306,10 @@ input[type="range"]:focus-visible {
 /* ================= MAIN 2-COLUMN WORKSPACE ================= */
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1.18fr) minmax(380px, 1fr);
+  grid-template-columns: minmax(0, 1.32fr) minmax(370px, 1fr);
   gap: 18px;
   flex: 1;
   align-items: stretch;
-}
-
-.left-col,
-.right-col {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 0;
 }
 
 /* ================= KITCHEN STAGE CARD ================= */
@@ -330,12 +322,59 @@ input[type="range"]:focus-visible {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+}
+
+/* Clean Newton Tip Header Strip (sits cleanly above kitchen SVG, never overlaps controls) */
+.newton-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: linear-gradient(180deg, #FFFDF8 0%, #FFF4E1 100%);
+  border-bottom: 2.8px solid var(--ink);
+  transition: transform 0.25s var(--bounce);
+}
+
+.newton-strip.pop .newton-avatar {
+  animation: bubblePop 0.35s var(--bounce);
+}
+
+@keyframes bubblePop {
+  0% { transform: scale(0.9); }
+  55% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.newton-avatar {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2.4px solid var(--ink);
+  background: #FFF3BF;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.newton-text {
+  font-size: 0.92rem;
+  line-height: 1.3;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.newton-text strong {
+  color: var(--coral-dark);
 }
 
 .stage-svg-wrap {
   position: relative;
   width: 100%;
-  aspect-ratio: 760 / 430;
+  flex: 1;
+  min-height: 360px;
+  aspect-ratio: 820 / 460;
   background: #FFF6E5;
   overflow: hidden;
 }
@@ -347,11 +386,26 @@ input[type="range"]:focus-visible {
   touch-action: none;
 }
 
+/* Interactive In-Scene SVG Thermometer & Isolation Sliders */
+.svg-slider-widget {
+  cursor: ns-resize;
+  outline: none;
+}
+
+.svg-slider-widget:hover {
+  filter: drop-shadow(0 3px 6px rgba(74, 53, 40, 0.16));
+}
+
+.svg-slider-widget.dragging {
+  cursor: grabbing;
+  filter: drop-shadow(0 4px 10px rgba(74, 53, 40, 0.24));
+}
+
 /* Floating Action Bar anchored nicely on counter bottom */
 .stage-action-bar {
   position: absolute;
   left: 50%;
-  bottom: 12px;
+  bottom: 14px;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
@@ -374,176 +428,8 @@ input[type="range"]:focus-visible {
   white-space: nowrap;
 }
 
-/* Newton Mascot Speech Bubble */
-.newton-bubble {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  max-width: min(360px, 60%);
-  background: rgba(255, 253, 248, 0.95);
-  border: 2.6px solid var(--ink);
-  border-radius: 20px;
-  padding: 6px 12px 6px 7px;
-  box-shadow: 0 4px 0 rgba(74, 53, 40, 0.18);
-  transition: transform 0.25s var(--bounce);
-}
-
-.newton-bubble.pop {
-  animation: bubblePop 0.35s var(--bounce);
-}
-
-@keyframes bubblePop {
-  0% { transform: scale(0.92); }
-  55% { transform: scale(1.04); }
-  100% { transform: scale(1); }
-}
-
-.newton-avatar {
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  border: 2.4px solid var(--ink);
-  background: #FFF3BF;
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-}
-
-.newton-text {
-  font-size: 0.79rem;
-  line-height: 1.25;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.newton-text strong {
-  color: var(--coral-dark);
-}
-
-/* ================= CONTROL DOCK (4 CLEAN CARDS) ================= */
-.controls-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.control-card {
-  background: var(--cream-card);
-  border: var(--stroke);
-  border-radius: var(--radius-md);
-  padding: 15px 16px;
-  box-shadow: var(--shadow-card);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 11px;
-  position: relative;
-}
-
-.control-card.theme-coral { background: linear-gradient(180deg, #FFFDF8 0%, #FFF1F1 100%); }
-.control-card.theme-sky { background: linear-gradient(180deg, #FFFDF8 0%, #EEF7FF 100%); }
-.control-card.theme-lavender { background: linear-gradient(180deg, #FFFDF8 0%, #F5F0FF 100%); }
-.control-card.theme-mint { background: linear-gradient(180deg, #FFFDF8 0%, #ECFCF6 100%); }
-
-.control-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.control-label {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 0.98rem;
-  font-weight: 700;
-}
-
-.control-badge {
-  font-size: 0.98rem;
-  font-weight: 700;
-  padding: 3px 12px;
-  border-radius: var(--radius-pill);
-  border: 2.2px solid var(--ink);
-  background: #FFFFFF;
-  white-space: nowrap;
-}
-
-.theme-coral .control-badge { background: var(--coral-soft); color: #C92A2A; }
-.theme-sky .control-badge { background: var(--sky-soft); color: #1864AB; }
-.theme-lavender .control-badge { background: var(--lavender-soft); color: #5F3DC4; }
-.theme-mint .control-badge { background: var(--mint-soft); color: #0B7255; }
-
-/* Chunky Accessible Pazu Range Sliders */
-.pazu-slider {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 16px;
-  border-radius: var(--radius-pill);
-  border: 2.5px solid var(--ink);
-  background: #FFFFFF;
-  outline: none;
-  cursor: pointer;
-}
-
-.theme-coral .pazu-slider {
-  background: linear-gradient(90deg, #FFD8A8 0%, #FF8787 55%, #FA5252 100%);
-}
-.theme-sky .pazu-slider {
-  background: linear-gradient(90deg, #74C0FC 0%, #A5D8FF 45%, #FFE066 78%, #FF922B 100%);
-}
-.theme-lavender .pazu-slider {
-  background: linear-gradient(90deg, #FFE8CC 0%, #D0BFFF 50%, #9775FA 100%);
-}
-
-.pazu-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #FFFFFF;
-  border: 3px solid var(--ink);
-  box-shadow: 0 3px 0 var(--ink);
-  cursor: grab;
-  transition: transform 0.14s var(--bounce);
-}
-
-.pazu-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.1);
-}
-
-.pazu-slider::-webkit-slider-thumb:active {
-  cursor: grabbing;
-  transform: scale(1.16);
-}
-
-.pazu-slider::-moz-range-thumb {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #FFFFFF;
-  border: 3px solid var(--ink);
-  box-shadow: 0 3px 0 var(--ink);
-  cursor: grab;
-}
-
-.preset-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
 .chip-btn {
-  flex: 1;
+  flex: 0 0 auto;
   min-height: 34px;
   border: 2.2px solid var(--ink);
   border-radius: var(--radius-pill);
@@ -557,10 +443,6 @@ input[type="range"]:focus-visible {
   box-shadow: 0 2.5px 0 var(--ink);
   transition: transform 0.12s var(--bounce), background 0.15s;
   white-space: nowrap;
-}
-
-.panel-tools .chip-btn {
-  flex: 0 0 auto;
 }
 
 .chip-btn:hover {
@@ -578,25 +460,16 @@ input[type="range"]:focus-visible {
   color: var(--ink);
 }
 
-.iso-meta {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--lavender-dark);
-  background: rgba(255, 255, 255, 0.72);
-  border: 2px solid #D0BFFF;
-  border-radius: var(--radius-pill);
-  padding: 5px 12px;
-}
-
-/* Time speed controls */
-.speed-row {
+/* ================= GRAPH TIME SPEED BAR ================= */
+.graph-speed-bar {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  background: linear-gradient(180deg, #F3FBF8 0%, #E7F9F2 100%);
+  border: 2.5px solid var(--ink);
+  border-radius: 18px;
+  padding: 8px 10px;
 }
 
 .speed-pills {
@@ -608,7 +481,7 @@ input[type="range"]:focus-visible {
 
 .speed-pill {
   flex: 1;
-  min-height: 38px;
+  min-height: 36px;
   min-width: 44px;
   text-align: center;
   border: 2.2px solid var(--ink);
@@ -618,7 +491,7 @@ input[type="range"]:focus-visible {
   font-family: inherit;
   font-size: 0.84rem;
   font-weight: 700;
-  padding: 6px 4px;
+  padding: 5px 4px;
   cursor: pointer;
   box-shadow: 0 2.5px 0 var(--ink);
   transition: transform 0.12s var(--bounce), background 0.15s;
@@ -635,9 +508,20 @@ input[type="range"]:focus-visible {
 }
 
 .play-pause-btn {
-  min-height: 38px;
-  padding: 6px 14px;
+  min-height: 36px;
+  padding: 5px 13px;
   font-size: 0.92rem;
+}
+
+.elapsed-pill {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #0B7255;
+  background: #FFFFFF;
+  border: 2.2px solid var(--ink);
+  border-radius: var(--radius-pill);
+  padding: 5px 11px;
+  white-space: nowrap;
 }
 
 /* ================= RIGHT COLUMN: SPACIOUS GRAPH CARD ================= */
@@ -738,7 +622,7 @@ input[type="range"]:focus-visible {
 
 /* ================= SVG SCENE ANIMATIONS ================= */
 .kettle-group {
-  transform-origin: 215px 255px;
+  transform-origin: 234px 269px;
   transition: filter 0.2s ease;
 }
 
@@ -1047,22 +931,23 @@ input[type="range"]:focus-visible {
     padding: 5px 10px;
     font-size: 0.8rem;
   }
-  .controls-grid {
-    grid-template-columns: 1fr;
-  }
-  .newton-bubble {
-    max-width: 68%;
-    padding: 5px 9px 5px 6px;
+  .newton-strip {
+    padding: 8px 12px;
+    gap: 9px;
   }
   .newton-avatar {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
   }
   .newton-text {
-    font-size: 0.74rem;
+    font-size: 0.82rem;
   }
   .btn-big {
     font-size: 0.96rem;
     padding: 10px 18px;
+  }
+  .elapsed-pill {
+    width: 100%;
+    text-align: center;
   }
 }

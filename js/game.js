@@ -41,10 +41,10 @@
   }
 
   function isolationProfile(iso) {
-    if (iso <= 25) return { name: 'Thin Tin Flask', skin: 'skinBare' };
-    if (iso <= 55) return { name: 'Cozy Knit Sleeve', skin: 'skinKnit' };
-    if (iso <= 85) return { name: 'Thermo Jacket', skin: 'skinJacket' };
-    return { name: 'Vacuum Shield', skin: 'skinVacuum' };
+    if (iso <= 25) return { name: 'Thin Tin Flask', shortName: 'Thin Tin', skin: 'skinBare' };
+    if (iso <= 55) return { name: 'Cozy Knit Sleeve', shortName: 'Knit Sleeve', skin: 'skinKnit' };
+    if (iso <= 85) return { name: 'Thermo Jacket', shortName: 'Thermo Coat', skin: 'skinJacket' };
+    return { name: 'Vacuum Shield', shortName: 'Vacuum', skin: 'skinVacuum' };
   }
 
   // Smooth color interpolation for liquid & thermometer based on Celsius (-10..100)
@@ -150,7 +150,9 @@
       'wallStopTop', 'wallStopBot', 'skyStopTop', 'skyStopBot',
       'hillBack', 'hillFront', 'windowSun', 'windowClouds', 'windowSnow',
       'clockHourHand', 'clockMinHand',
-      'roomThermoFill', 'roomThermoBulb', 'roomThermoText',
+      'kettleThermoControl', 'kettleThermoFill', 'kettleThermoBulb', 'kettleThermoKnob', 'kettleTargetBadge',
+      'roomThermoControl', 'roomThermoFill', 'roomThermoBulb', 'roomThermoKnob', 'roomThermoText', 'roomWeatherIcon',
+      'isoControl', 'isoTrackFill', 'isoKnob', 'isoBadge', 'isoName',
       'heaterGlow', 'baseLed', 'dragHint', 'pourStream', 'pourArcOuter',
       'heatWavesGroup', 'thermosSteam', 'skinBare', 'skinKnit', 'skinJacket', 'skinVacuum',
       'thermosLiquid', 'thermosSurface', 'thermosMouth', 'thermosBlushL', 'thermosBlushR',
@@ -158,9 +160,6 @@
       'kettleWrapper', 'kettleGroup', 'kettleSteam', 'kettleLiquid', 'kettleSurface',
       'kettleBubbles', 'kettleMouth', 'kettleBlushL', 'kettleBlushR', 'kettleTempText',
       'stageActionBar', 'primaryActionBtn',
-      'kettleSlider', 'kettleTargetBadge',
-      'roomSlider', 'roomTempBadge', 'roomWeatherIcon',
-      'isoSlider', 'isoBadge', 'isoName',
       'elapsedBadge', 'playPauseBtn', 'speedPills',
       'tempGraph', 'eqHorizonPill', 'saveCompareBtn', 'clearRunsBtn', 'runLegend',
       'starToast', 'starToastText',
@@ -494,10 +493,28 @@
       : `Equilibrium ≈ ${label}`;
   }
 
+  function updateKettleThermometerUi() {
+    const t = state.kettleTarget;
+    el.kettleTargetBadge.textContent = `${t}°C`;
+    el.kettleThermoControl.setAttribute('aria-valuenow', String(t));
+
+    // Vertical thermometer track inside #kettleThermoControl: y = 40 (100°C) .. 120 (25°C)
+    const ratio = Math.max(0, Math.min(1, (t - 25) / 75));
+    const knobY = 120 - ratio * 80;
+    const fillH = 126 - knobY;
+    const color = tempToColor(t);
+
+    el.kettleThermoFill.setAttribute('y', knobY.toFixed(1));
+    el.kettleThermoFill.setAttribute('height', fillH.toFixed(1));
+    el.kettleThermoFill.setAttribute('fill', color);
+    el.kettleThermoBulb.setAttribute('fill', color);
+    el.kettleThermoKnob.setAttribute('transform', `translate(51, ${knobY.toFixed(1)})`);
+  }
+
   function updateRoomAtmosphere() {
     const rt = state.roomTemp;
-    el.roomTempBadge.textContent = `${rt}°C`;
     el.roomThermoText.textContent = `${rt}°C`;
+    el.roomThermoControl.setAttribute('aria-valuenow', String(rt));
 
     // Weather icon
     if (rt <= 5) el.roomWeatherIcon.textContent = '❄️';
@@ -505,15 +522,16 @@
     else if (rt <= 26) el.roomWeatherIcon.textContent = '🌤️';
     else el.roomWeatherIcon.textContent = '☀️';
 
-    // Wall thermometer fill (-10..40 -> y 96..34)
+    // Interactive room thermometer fill & knob (-10..40 -> knobY 120..40)
     const ratio = Math.max(0, Math.min(1, (rt + 10) / 50));
-    const fillH = 12 + ratio * 58;
-    const fillY = 102 - fillH;
+    const knobY = 120 - ratio * 80;
+    const fillH = 126 - knobY;
     const thermoColor = tempToColor(rt);
-    el.roomThermoFill.setAttribute('y', fillY.toFixed(1));
+    el.roomThermoFill.setAttribute('y', knobY.toFixed(1));
     el.roomThermoFill.setAttribute('height', fillH.toFixed(1));
     el.roomThermoFill.setAttribute('fill', thermoColor);
     el.roomThermoBulb.setAttribute('fill', thermoColor);
+    el.roomThermoKnob.setAttribute('transform', `translate(47, ${knobY.toFixed(1)})`);
 
     // Kitchen wall & window sky shift smoothly with room temperature
     if (rt <= 8) {
@@ -545,10 +563,6 @@
       el.windowSun.setAttribute('opacity', '0.9');
     }
 
-    // Highlight matching room preset chip
-    document.querySelectorAll('[data-room]').forEach((btn) => {
-      btn.classList.toggle('active', Number(btn.dataset.room) === rt);
-    });
     updateEquilibriumHorizonUi();
     renderLegend();
   }
@@ -557,7 +571,16 @@
     state.k = isolationToK(state.isolation);
     const prof = isolationProfile(state.isolation);
     el.isoBadge.textContent = `${state.isolation}%`;
-    el.isoName.textContent = prof.name;
+    el.isoName.textContent = prof.shortName;
+    el.isoControl.setAttribute('aria-valuenow', String(state.isolation));
+
+    // Interactive isolation track inside #isoControl: y = 44 (100%) .. 126 (0%)
+    const ratio = Math.max(0, Math.min(1, state.isolation / 100));
+    const knobY = 126 - ratio * 82;
+    const fillH = 132 - knobY;
+    el.isoTrackFill.setAttribute('y', knobY.toFixed(1));
+    el.isoTrackFill.setAttribute('height', fillH.toFixed(1));
+    el.isoKnob.setAttribute('transform', `translate(44, ${knobY.toFixed(1)})`);
 
     ['skinBare', 'skinKnit', 'skinJacket', 'skinVacuum'].forEach((id) => {
       el[id].setAttribute('opacity', id === prof.skin ? '1' : '0');
@@ -569,10 +592,10 @@
     const t = state.kettleTemp;
     const color = tempToColor(t);
 
-    // Liquid height inside window (y=218..292, height 74)
+    // Liquid height inside window (y=232..306, height 74)
     const maxH = 66;
     const h = Math.max(0, maxH * state.kettleFill);
-    const y = 292 - h;
+    const y = 306 - h;
     el.kettleLiquid.setAttribute('y', y.toFixed(1));
     el.kettleLiquid.setAttribute('height', h.toFixed(1));
     el.kettleLiquid.setAttribute('fill', color);
@@ -625,7 +648,7 @@
 
   function updateThermosVisuals() {
     const fillH = 92 * state.thermosFill;
-    const fillY = 302 - fillH;
+    const fillY = 316 - fillH;
     const t = state.thermosTemp !== null ? state.thermosTemp : state.kettleTarget;
     const color = tempToColor(t);
 
@@ -698,7 +721,7 @@
     const hrAngle = ((mins / 60) % 12) * 30;
     el.clockMinHand.setAttribute('transform', `rotate(${minAngle.toFixed(1)})`);
     el.clockHourHand.setAttribute('transform', `rotate(${hrAngle.toFixed(1)})`);
-    el.elapsedBadge.textContent = formatElapsedClock(mins);
+    el.elapsedBadge.textContent = `⏱️ ${formatElapsedClock(mins)}`;
   }
 
   function updateCoolingHints() {
@@ -769,15 +792,15 @@
     kettle.addEventListener('pointermove', (evt) => {
       if (!state.dragging || state.phase !== 'ready_to_pour') return;
       const svgPt = clientToSvgPoint(evt.clientX, evt.clientY);
-      const dx = Math.max(-60, Math.min(270, svgPt.x - state.dragOffsetX));
+      const dx = Math.max(-50, Math.min(210, svgPt.x - state.dragOffsetX));
       const dy = Math.max(-140, Math.min(35, svgPt.y - state.dragOffsetY));
       state.dragCurX = dx;
       state.dragCurY = dy;
-      const tilt = Math.max(0, Math.min(28, (dx - 80) * 0.16));
-      el.kettleWrapper.setAttribute('transform', `translate(${dx.toFixed(1)}, ${dy.toFixed(1)}) rotate(${tilt.toFixed(1)}, 215, 255)`);
+      const tilt = Math.max(0, Math.min(28, (dx - 50) * 0.2));
+      el.kettleWrapper.setAttribute('transform', `translate(${dx.toFixed(1)}, ${dy.toFixed(1)}) rotate(${tilt.toFixed(1)}, 234, 269)`);
 
       // Auto-pour when kettle spout enters thermos zone!
-      if (dx >= 170) {
+      if (dx >= 120) {
         state.dragging = false;
         startPouring(dx, dy);
       }
@@ -787,7 +810,7 @@
       if (!state.dragging) return;
       state.dragging = false;
       const movedPx = Math.hypot(evt.clientX - state.dragStartClientX, evt.clientY - state.dragStartClientY);
-      if (state.dragCurX >= 145 || movedPx < 10) {
+      if (state.dragCurX >= 95 || movedPx < 10) {
         // Released near thermos OR quick-tapped kettle -> pour!
         startPouring(state.dragCurX, state.dragCurY);
       } else {
@@ -801,6 +824,67 @@
 
     kettle.addEventListener('pointerup', endDrag);
     kettle.addEventListener('pointercancel', endDrag);
+  }
+
+  // ================= IN-SCENE VERTICAL SVG SLIDER INTERACTION =================
+  function bindVerticalSvgSlider(groupEl, opts) {
+    let activePointerId = null;
+
+    const applyFromClientY = (clientX, clientY) => {
+      const svgPt = clientToSvgPoint(clientX, clientY);
+      const localY = svgPt.y - opts.originY;
+      const clampedY = Math.max(opts.topY, Math.min(opts.bottomY, localY));
+      const ratio = (opts.bottomY - clampedY) / (opts.bottomY - opts.topY);
+      const val = Math.round(opts.min + ratio * (opts.max - opts.min));
+      if (val !== opts.getValue()) {
+        playSliderTick(val, opts.min, opts.max);
+        opts.onChange(val);
+      }
+    };
+
+    groupEl.addEventListener('pointerdown', (evt) => {
+      evt.preventDefault();
+      activePointerId = evt.pointerId;
+      if (groupEl.setPointerCapture) groupEl.setPointerCapture(evt.pointerId);
+      groupEl.classList.add('dragging');
+      applyFromClientY(evt.clientX, evt.clientY);
+    });
+
+    groupEl.addEventListener('pointermove', (evt) => {
+      if (activePointerId !== evt.pointerId) return;
+      applyFromClientY(evt.clientX, evt.clientY);
+    });
+
+    const stopSlide = (evt) => {
+      if (activePointerId !== evt.pointerId) return;
+      activePointerId = null;
+      groupEl.classList.remove('dragging');
+    };
+
+    groupEl.addEventListener('pointerup', stopSlide);
+    groupEl.addEventListener('pointercancel', stopSlide);
+
+    // Full keyboard accessibility for vertical SVG sliders
+    groupEl.addEventListener('keydown', (evt) => {
+      const cur = opts.getValue();
+      const step = opts.step || 1;
+      const bigStep = opts.bigStep || 5;
+      let next = null;
+      if (evt.key === 'ArrowUp' || evt.key === 'ArrowRight') next = cur + step;
+      else if (evt.key === 'ArrowDown' || evt.key === 'ArrowLeft') next = cur - step;
+      else if (evt.key === 'PageUp') next = cur + bigStep;
+      else if (evt.key === 'PageDown') next = cur - bigStep;
+      else if (evt.key === 'Home') next = opts.min;
+      else if (evt.key === 'End') next = opts.max;
+      if (next !== null) {
+        evt.preventDefault();
+        const clamped = Math.max(opts.min, Math.min(opts.max, next));
+        if (clamped !== cur) {
+          playSliderTick(clamped, opts.min, opts.max);
+          opts.onChange(clamped);
+        }
+      }
+    });
   }
 
   // ================= MAIN ANIMATION & PHYSICS LOOP =================
@@ -831,7 +915,7 @@
       // Stage 1 (0..0.22): Move kettle into pour position & pop thermos lid open
       // Stage 2 (0.22..0.78): Pour stream flows, kettle empties, thermos fills
       // Stage 3 (0.78..1.0): Kettle glides back, lid snaps closed
-      const pourX = 152;
+      const pourX = 100;
       const pourY = -100;
       const pourTilt = 40;
 
@@ -840,13 +924,13 @@
         const x = lerp(state.pourFromX, pourX, u);
         const y = lerp(state.pourFromY, pourY, u);
         const rot = lerp(0, pourTilt, u);
-        el.kettleWrapper.setAttribute('transform', `translate(${x.toFixed(1)}, ${y.toFixed(1)}) rotate(${rot.toFixed(1)}, 215, 255)`);
-        el.thermosCap.setAttribute('transform', `translate(${(52 * u).toFixed(1)}, ${(-32 * u).toFixed(1)}) rotate(${(38 * u).toFixed(1)}, 535, 160)`);
+        el.kettleWrapper.setAttribute('transform', `translate(${x.toFixed(1)}, ${y.toFixed(1)}) rotate(${rot.toFixed(1)}, 234, 269)`);
+        el.thermosCap.setAttribute('transform', `translate(${(52 * u).toFixed(1)}, ${(-32 * u).toFixed(1)}) rotate(${(38 * u).toFixed(1)}, 502, 174)`);
         el.pourStream.setAttribute('opacity', '0');
       } else if (p < 0.78) {
         const u = (p - 0.22) / 0.56;
-        el.kettleWrapper.setAttribute('transform', `translate(${pourX}, ${pourY}) rotate(${pourTilt}, 215, 255)`);
-        el.thermosCap.setAttribute('transform', 'translate(52, -32) rotate(38, 535, 160)');
+        el.kettleWrapper.setAttribute('transform', `translate(${pourX}, ${pourY}) rotate(${pourTilt}, 234, 269)`);
+        el.thermosCap.setAttribute('transform', 'translate(52, -32) rotate(38, 502, 174)');
         el.pourArcOuter.setAttribute('fill', tempToColor(state.kettleTarget));
         el.pourStream.setAttribute('opacity', '0.95');
 
@@ -857,8 +941,8 @@
         const x = lerp(pourX, 0, u);
         const y = lerp(pourY, 0, u);
         const rot = lerp(pourTilt, 0, u);
-        el.kettleWrapper.setAttribute('transform', `translate(${x.toFixed(1)}, ${y.toFixed(1)}) rotate(${rot.toFixed(1)}, 215, 255)`);
-        el.thermosCap.setAttribute('transform', `translate(${(52 * (1 - u)).toFixed(1)}, ${(-32 * (1 - u)).toFixed(1)}) rotate(${(38 * (1 - u)).toFixed(1)}, 535, 160)`);
+        el.kettleWrapper.setAttribute('transform', `translate(${x.toFixed(1)}, ${y.toFixed(1)}) rotate(${rot.toFixed(1)}, 234, 269)`);
+        el.thermosCap.setAttribute('transform', `translate(${(52 * (1 - u)).toFixed(1)}, ${(-32 * (1 - u)).toFixed(1)}) rotate(${(38 * (1 - u)).toFixed(1)}, 502, 174)`);
         el.pourStream.setAttribute('opacity', '0');
       }
 
@@ -926,12 +1010,7 @@
   function setKettleTarget(val) {
     const clamped = Math.max(25, Math.min(100, Math.round(val)));
     state.kettleTarget = clamped;
-    el.kettleSlider.value = clamped;
-    el.kettleTargetBadge.textContent = `${clamped}°C`;
-
-    document.querySelectorAll('[data-kettle]').forEach((btn) => {
-      btn.classList.toggle('active', Number(btn.dataset.kettle) === clamped);
-    });
+    updateKettleThermometerUi();
 
     if (state.phase === 'idle') {
       state.kettleTemp = Math.min(20, clamped - 5);
@@ -950,7 +1029,6 @@
   function setRoomTemp(val) {
     const clamped = Math.max(-10, Math.min(40, Math.round(val)));
     state.roomTemp = clamped;
-    el.roomSlider.value = clamped;
     updateRoomAtmosphere();
     if (state.phase === 'cooling') {
       setNewtonMessage(
@@ -967,7 +1045,6 @@
   function setIsolation(val) {
     const clamped = Math.max(0, Math.min(100, Math.round(val)));
     state.isolation = clamped;
-    el.isoSlider.value = clamped;
     updateIsolationVisuals();
     if (state.phase === 'cooling') {
       const prof = isolationProfile(clamped);
@@ -1006,41 +1083,44 @@
   }
 
   function bindEvents() {
-    // Sliders
-    el.kettleSlider.addEventListener('input', (e) => {
-      const v = Number(e.target.value);
-      playSliderTick(v, 25, 100);
-      setKettleTarget(v);
+    // Interactive in-scene SVG sliders (kettle temp, room temp, isolation)
+    bindVerticalSvgSlider(el.kettleThermoControl, {
+      originY: 134,
+      topY: 40,
+      bottomY: 120,
+      min: 25,
+      max: 100,
+      step: 1,
+      bigStep: 5,
+      getValue: () => state.kettleTarget,
+      onChange: setKettleTarget,
     });
 
-    el.roomSlider.addEventListener('input', (e) => {
-      const v = Number(e.target.value);
-      playSliderTick(v, -10, 40);
-      setRoomTemp(v);
+    bindVerticalSvgSlider(el.roomThermoControl, {
+      originY: 134,
+      topY: 40,
+      bottomY: 120,
+      min: -10,
+      max: 40,
+      step: 1,
+      bigStep: 5,
+      getValue: () => state.roomTemp,
+      onChange: setRoomTemp,
     });
 
-    el.isoSlider.addEventListener('input', (e) => {
-      const v = Number(e.target.value);
-      playSliderTick(v, 0, 100);
-      setIsolation(v);
+    bindVerticalSvgSlider(el.isoControl, {
+      originY: 134,
+      topY: 44,
+      bottomY: 126,
+      min: 0,
+      max: 100,
+      step: 1,
+      bigStep: 10,
+      getValue: () => state.isolation,
+      onChange: setIsolation,
     });
 
-    // Preset chips
-    document.querySelectorAll('[data-kettle]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        AudioFX.pop(560);
-        setKettleTarget(Number(btn.dataset.kettle));
-      });
-    });
-
-    document.querySelectorAll('[data-room]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        AudioFX.pop(520);
-        setRoomTemp(Number(btn.dataset.room));
-      });
-    });
-
-    // Speed pills & play/pause
+    // Speed pills & play/pause inside Graph Card
     el.speedPills.querySelectorAll('.speed-pill').forEach((btn) => {
       btn.addEventListener('click', () => {
         AudioFX.pop(600);
