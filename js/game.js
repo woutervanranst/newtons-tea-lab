@@ -8,15 +8,7 @@
   'use strict';
 
   const AudioFX = global.NewtonAudio;
-  const { CoolingGraph, RUN_COLORS, formatDurationShort } = global.NewtonGraph;
-
-  const SPEED_HINTS = {
-    1: 'Real time (1 sec = 1 sec)',
-    10: '1 sec = 10 sec',
-    60: '1 sec = 1 min',
-    300: '1 sec = 5 min',
-    1200: '1 sec = 20 min',
-  };
+  const { CoolingGraph, RUN_COLORS, formatDurationShort, calcEquilibriumTimeMin } = global.NewtonGraph;
 
   const MISSIONS = [
     {
@@ -120,6 +112,7 @@
     points: [],
     savedRuns: [],
     currentRunSaved: false,
+    fixedMaxTimeMin: null,
     showTheory: true,
 
     // Animation progress timers
@@ -167,12 +160,9 @@
       'stageActionBar', 'primaryActionBtn',
       'kettleSlider', 'kettleTargetBadge',
       'roomSlider', 'roomTempBadge', 'roomWeatherIcon',
-      'isoSlider', 'isoBadge', 'isoName', 'isoKText',
-      'elapsedBadge', 'playPauseBtn', 'speedPills', 'speedHint',
-      'tempGraph', 'toggleTheoryBtn', 'saveCompareBtn', 'clearRunsBtn', 'runLegend',
-      'metricWater', 'metricRoom', 'metricDelta', 'metricRate',
-      'eqRoom', 'eqRoom2', 'eqStart', 'eqK', 'eqTime',
-      'heatMeterFill', 'heatFlowTag', 'formulaTakeaway',
+      'isoSlider', 'isoBadge', 'isoName',
+      'elapsedBadge', 'playPauseBtn', 'speedPills',
+      'tempGraph', 'eqHorizonPill', 'saveCompareBtn', 'clearRunsBtn', 'runLegend',
       'starToast', 'starToastText',
       'missionsModal', 'missionList', 'guideModal',
     ];
@@ -384,6 +374,8 @@
     state.elapsedMin = 0;
     state.paused = false;
     state.currentRunSaved = false;
+    // Lock the graph's X-axis upon pouring based on calculated time until equilibrium
+    state.fixedMaxTimeMin = calcEquilibriumTimeMin(state.thermosStartTemp, state.roomTemp, state.k);
     state.points = [
       {
         t: 0,
@@ -392,6 +384,7 @@
       },
     ];
 
+    updateEquilibriumHorizonUi();
     updatePlayPauseUi();
     syncStepPills();
     syncActionBar();
@@ -447,6 +440,8 @@
     state.thermosFill = 0;
     state.elapsedMin = 0;
     state.points = [];
+    state.currentRunSaved = false;
+    state.fixedMaxTimeMin = null;
     state.paused = false;
     state.dragging = false;
     state.dragCurX = 0;
@@ -460,6 +455,7 @@
     el.thermosCap.setAttribute('transform', 'translate(0, 0)');
     el.pourStream.setAttribute('opacity', '0');
 
+    updateEquilibriumHorizonUi();
     updatePlayPauseUi();
     renderLegend();
     syncStepPills();
@@ -485,11 +481,23 @@
   }
 
   // ================= VISUAL SCENE UPDATERS =================
+  function getActiveMaxTimeMin() {
+    if (state.fixedMaxTimeMin !== null) return state.fixedMaxTimeMin;
+    return calcEquilibriumTimeMin(state.kettleTarget, state.roomTemp, state.k);
+  }
+
+  function updateEquilibriumHorizonUi() {
+    const horizon = getActiveMaxTimeMin();
+    const label = formatDurationShort(horizon);
+    el.eqHorizonPill.textContent = state.fixedMaxTimeMin !== null
+      ? `Equilibrium: ${label}`
+      : `Equilibrium ≈ ${label}`;
+  }
+
   function updateRoomAtmosphere() {
     const rt = state.roomTemp;
     el.roomTempBadge.textContent = `${rt}°C`;
     el.roomThermoText.textContent = `${rt}°C`;
-    el.metricRoom.textContent = `${rt.toFixed(1)}°C`;
 
     // Weather icon
     if (rt <= 5) el.roomWeatherIcon.textContent = '❄️';
@@ -541,6 +549,7 @@
     document.querySelectorAll('[data-room]').forEach((btn) => {
       btn.classList.toggle('active', Number(btn.dataset.room) === rt);
     });
+    updateEquilibriumHorizonUi();
     renderLegend();
   }
 
@@ -549,11 +558,11 @@
     const prof = isolationProfile(state.isolation);
     el.isoBadge.textContent = `${state.isolation}%`;
     el.isoName.textContent = prof.name;
-    el.isoKText.textContent = `k = ${state.k.toFixed(4)} /min`;
 
     ['skinBare', 'skinKnit', 'skinJacket', 'skinVacuum'].forEach((id) => {
       el[id].setAttribute('opacity', id === prof.skin ? '1' : '0');
     });
+    updateEquilibriumHorizonUi();
   }
 
   function updateKettleVisuals() {
@@ -692,62 +701,21 @@
     el.elapsedBadge.textContent = formatElapsedClock(mins);
   }
 
-  function updateTelemetryAndFormula() {
+  function updateCoolingHints() {
+    if (state.phase !== 'cooling' || state.thermosTemp === null) return;
     const startT = state.thermosStartTemp !== null ? state.thermosStartTemp : state.kettleTarget;
-    el.eqRoom.textContent = `${state.roomTemp}°`;
-    el.eqRoom2.textContent = `${state.roomTemp}°`;
-    el.eqStart.textContent = `${Math.round(startT)}°`;
-    el.eqK.textContent = state.k.toFixed(3);
-    el.eqTime.textContent = formatDurationShort(state.elapsedMin);
-
-    if (state.thermosTemp === null) {
-      el.metricWater.textContent = '--';
-      el.metricDelta.textContent = '--';
-      el.metricRate.textContent = '--';
-      el.heatMeterFill.style.width = '0%';
-      el.heatFlowTag.textContent = 'Waiting';
-      return;
-    }
-
     const delta = state.thermosTemp - state.roomTemp;
-    const rate = -state.k * delta; // °C per min
-    const absRate = Math.abs(rate);
 
-    el.metricWater.textContent = `${state.thermosTemp.toFixed(1)}°C`;
-    el.metricDelta.textContent = `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}°C`;
-    el.metricRate.textContent = `${rate >= 0 ? '+' : ''}${rate.toFixed(2)}°/m`;
-
-    // Heat escape meter (0..100%)
-    const pct = Math.min(100, (absRate / 2.6) * 100);
-    el.heatMeterFill.style.width = `${pct.toFixed(1)}%`;
-
-    if (Math.abs(delta) < 0.6) {
-      el.heatFlowTag.textContent = 'Balanced!';
-      el.heatFlowTag.style.color = '#1864AB';
-    } else if (absRate >= 1.2) {
-      el.heatFlowTag.textContent = delta > 0 ? 'Super Fast!' : 'Warming Fast!';
-      el.heatFlowTag.style.color = '#E04848';
-    } else if (absRate >= 0.35) {
-      el.heatFlowTag.textContent = delta > 0 ? 'Steady' : 'Warming';
-      el.heatFlowTag.style.color = '#D97706';
-    } else {
-      el.heatFlowTag.textContent = 'Gentle';
-      el.heatFlowTag.style.color = '#0B7255';
-    }
-
-    // Dynamic Newton's Law educational coaching during cooling
-    if (state.phase === 'cooling') {
-      if (Math.abs(delta) < 1.2 && state.elapsedMin > 5) {
-        setNewtonMessage(
-          'equilibrium',
-          `Thermal equilibrium! Water matched the room (<strong>${state.roomTemp}°C</strong>), so the curve went completely flat!`
-        );
-      } else if (Math.abs(delta) < Math.abs(startT - state.roomTemp) * 0.45 && state.elapsedMin > 3) {
-        setNewtonMessage(
-          'slowing_down',
-          `Look at the curve bending flatter! Smaller gap (<strong>ΔT = ${Math.abs(delta).toFixed(1)}°C</strong>) means slower cooling!`
-        );
-      }
+    if (Math.abs(delta) < 1.2 && state.elapsedMin > 5) {
+      setNewtonMessage(
+        'equilibrium',
+        `Equilibrium reached! Water matched the room (<strong>${state.roomTemp}°C</strong>), so the curve flattened out!`
+      );
+    } else if (Math.abs(delta) < Math.abs(startT - state.roomTemp) * 0.45 && state.elapsedMin > 3) {
+      setNewtonMessage(
+        'slowing_down',
+        `Watch the curve bend flatter! Smaller gap (<strong>${Math.abs(delta).toFixed(1)}°C</strong>) means slower cooling!`
+      );
     }
   }
 
@@ -766,6 +734,7 @@
       kettleTarget: state.kettleTarget,
       k: state.k,
       elapsedMin: state.elapsedMin,
+      maxTimeMin: getActiveMaxTimeMin(),
       showTheory: state.showTheory,
     });
   }
@@ -907,28 +876,29 @@
         state.thermosTemp = state.roomTemp + (state.thermosTemp - state.roomTemp) * decay;
         state.elapsedMin += simDtMin;
 
-        // Smart adaptive sampling so curves stay silky across seconds or hours
+        // Sample cleanly across the fixed equilibrium time axis without resizing it
+        const horizon = state.fixedMaxTimeMin || 60;
         const lastPt = state.points[state.points.length - 1];
-        const minGap = Math.max(0.05, state.elapsedMin / 240);
-        if (
-          !lastPt ||
-          state.elapsedMin - lastPt.t >= minGap ||
-          Math.abs(state.thermosTemp - lastPt.T) >= 0.45
-        ) {
+        const minGap = Math.max(0.05, horizon / 220);
+        if (state.elapsedMin <= horizon) {
+          if (
+            !lastPt ||
+            state.elapsedMin - lastPt.t >= minGap ||
+            Math.abs(state.thermosTemp - lastPt.T) >= 0.45
+          ) {
+            state.points.push({
+              t: state.elapsedMin,
+              T: state.thermosTemp,
+              roomTemp: state.roomTemp,
+            });
+          }
+        } else if (lastPt && lastPt.t < horizon) {
+          // Record exact final point right at the equilibrium right-edge
           state.points.push({
-            t: state.elapsedMin,
+            t: horizon,
             T: state.thermosTemp,
             roomTemp: state.roomTemp,
           });
-          // Cap point array size gently without losing curve shape
-          if (state.points.length > 520) {
-            const thinned = [state.points[0]];
-            for (let i = 1; i < state.points.length - 1; i += 2) {
-              thinned.push(state.points[i]);
-            }
-            thinned.push(state.points[state.points.length - 1]);
-            state.points = thinned;
-          }
         }
         checkMissions();
       }
@@ -937,7 +907,7 @@
     updateKettleVisuals();
     updateThermosVisuals();
     updateClockHands();
-    updateTelemetryAndFormula();
+    updateCoolingHints();
     renderGraph();
 
     global.requestAnimationFrame(tick);
@@ -974,6 +944,7 @@
       syncActionBar();
       setNewtonMessage('retarget', `Target changed to <strong>${clamped}°C</strong>! Tap <strong>Boil!</strong>`);
     }
+    updateEquilibriumHorizonUi();
   }
 
   function setRoomTemp(val) {
@@ -1013,7 +984,6 @@
 
   function setSpeed(speed) {
     state.timeSpeed = speed;
-    el.speedHint.textContent = SPEED_HINTS[speed] || `${speed}× speed`;
     el.speedPills.querySelectorAll('.speed-pill').forEach((btn) => {
       btn.classList.toggle('active', Number(btn.dataset.speed) === speed);
     });
@@ -1085,12 +1055,6 @@
     });
 
     // Graph tools
-    el.toggleTheoryBtn.addEventListener('click', () => {
-      AudioFX.pop(520);
-      state.showTheory = !state.showTheory;
-      el.toggleTheoryBtn.classList.toggle('active', state.showTheory);
-    });
-
     el.saveCompareBtn.addEventListener('click', () => {
       AudioFX.pop(640);
       if (state.points.length < 2) {

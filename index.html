@@ -24,7 +24,6 @@
         </div>
         <div>
           <h1 class="brand-title">Newton’s Tea Lab</h1>
-          <span class="brand-sub">Newton’s Law of Cooling</span>
         </div>
       </div>
 
@@ -39,7 +38,7 @@
         </div>
         <div class="step-pill" id="stepCool">
           <span class="step-num">3</span>
-          <span>Cool &amp; Graph</span>
+          <span>Cool</span>
         </div>
       </nav>
 
@@ -483,18 +482,17 @@
           </div>
         </div>
 
-        <!-- ========== 4 PAZU CONTROL CARDS ========== -->
+        <!-- ========== 4 CLEAN PAZU CONTROL CARDS ========== -->
         <div class="controls-grid">
           <!-- 1. Kettle Temperature -->
           <div class="control-card theme-coral">
             <div class="control-head">
-              <span class="control-label">🔥 Kettle Temp</span>
+              <label class="control-label" for="kettleSlider">🔥 Kettle Temp</label>
               <span class="control-badge" id="kettleTargetBadge">95°C</span>
             </div>
             <input type="range" class="pazu-slider" id="kettleSlider" min="25" max="100" step="1" value="95" aria-label="Kettle target temperature in Celsius"/>
             <div class="preset-row">
-              <button class="chip-btn" data-kettle="45">45° Warm</button>
-              <button class="chip-btn" data-kettle="75">75° Cocoa</button>
+              <button class="chip-btn" data-kettle="50">50° Warm</button>
               <button class="chip-btn active" data-kettle="95">95° Tea</button>
               <button class="chip-btn" data-kettle="100">100° Boil</button>
             </div>
@@ -503,28 +501,26 @@
           <!-- 2. Room Temperature -->
           <div class="control-card theme-sky">
             <div class="control-head">
-              <span class="control-label"><span id="roomWeatherIcon">🌤️</span> Room Temp</span>
+              <label class="control-label" for="roomSlider"><span id="roomWeatherIcon" aria-hidden="true">🌤️</span> Room Temp</label>
               <span class="control-badge" id="roomTempBadge">20°C</span>
             </div>
             <input type="range" class="pazu-slider" id="roomSlider" min="-10" max="40" step="1" value="20" aria-label="Room temperature in Celsius"/>
             <div class="preset-row">
-              <button class="chip-btn" data-room="0">❄️ 0° Snow</button>
-              <button class="chip-btn" data-room="10">🌬️ 10° Cool</button>
-              <button class="chip-btn active" data-room="20">🌤️ 20° Cozy</button>
-              <button class="chip-btn" data-room="35">☀️ 35° Hot</button>
+              <button class="chip-btn" data-room="0">❄️ 0°</button>
+              <button class="chip-btn active" data-room="20">🌤️ 20°</button>
+              <button class="chip-btn" data-room="35">☀️ 35°</button>
             </div>
           </div>
 
           <!-- 3. Isolation Factor -->
           <div class="control-card theme-lavender">
             <div class="control-head">
-              <span class="control-label">🧥 Isolation Factor</span>
+              <label class="control-label" for="isoSlider">🧥 Isolation</label>
               <span class="control-badge" id="isoBadge">45%</span>
             </div>
             <input type="range" class="pazu-slider" id="isoSlider" min="0" max="100" step="1" value="45" aria-label="Thermos isolation factor percentage"/>
             <div class="iso-meta">
-              <span class="iso-pill-name" id="isoName">Knit Sleeve</span>
-              <span id="isoKText">k = 0.017 /min</span>
+              <span class="iso-pill-name" id="isoName">Cozy Knit Sleeve</span>
             </div>
           </div>
 
@@ -535,8 +531,8 @@
               <span class="control-badge" id="elapsedBadge">0m 00s</span>
             </div>
             <div class="speed-row">
-              <button class="pazu-btn btn-yellow play-pause-btn" id="playPauseBtn" title="Pause or Resume time">⏸</button>
-              <div class="speed-pills" id="speedPills">
+              <button class="pazu-btn btn-yellow play-pause-btn" id="playPauseBtn" title="Pause or Resume time" aria-label="Pause or resume simulation">⏸</button>
+              <div class="speed-pills" id="speedPills" role="group" aria-label="Time speed multiplier">
                 <button class="speed-pill" data-speed="1">1×</button>
                 <button class="speed-pill" data-speed="10">10×</button>
                 <button class="speed-pill active" data-speed="60">60×</button>
@@ -544,29 +540,26 @@
                 <button class="speed-pill" data-speed="1200">1200×</button>
               </div>
             </div>
-            <div class="iso-meta">
-              <span id="speedHint">1 sec = 1 min</span>
-              <span>Drag graph to inspect!</span>
-            </div>
           </div>
         </div>
       </section>
 
-      <!-- RIGHT COLUMN: LIVE GRAPH + NEWTON'S LAW PANEL -->
+      <!-- RIGHT COLUMN: SPACIOUS LIVE GRAPH CARD -->
       <section class="right-col">
-        <!-- GRAPH CARD -->
-        <div class="panel-card">
+        <div class="panel-card graph-card">
           <div class="panel-head">
-            <h2 class="panel-title">📈 Temperature vs. Time</h2>
+            <div class="panel-title-group">
+              <h2 class="panel-title">📈 Temperature vs. Time</h2>
+              <span class="eq-horizon-pill" id="eqHorizonPill">Equilibrium ≈ 5h</span>
+            </div>
             <div class="panel-tools">
-              <button class="chip-btn active" id="toggleTheoryBtn" title="Show ideal Newton exponential curve">Ideal Curve</button>
-              <button class="chip-btn" id="saveCompareBtn" title="Save current curve to compare with next run">📌 Compare</button>
-              <button class="chip-btn" id="clearRunsBtn" title="Clear saved comparison curves" style="display:none;">Clear</button>
+              <button class="chip-btn" id="saveCompareBtn" title="Pin current curve to compare with next run">📌 Compare</button>
+              <button class="chip-btn" id="clearRunsBtn" title="Clear pinned curves" style="display:none;">Clear</button>
             </div>
           </div>
 
           <div class="graph-wrap">
-            <canvas id="tempGraph"></canvas>
+            <canvas id="tempGraph" aria-label="Temperature versus time graph"></canvas>
           </div>
 
           <div class="run-legend" id="runLegend">
@@ -576,56 +569,8 @@
             </span>
             <span class="legend-item">
               <span class="legend-swatch" style="background:#339AF0;"></span>
-              <span>Room Temp (Asymptote)</span>
+              <span>Room Temp</span>
             </span>
-          </div>
-        </div>
-
-        <!-- LIVE TELEMETRY & NEWTON'S LAW CARD -->
-        <div class="panel-card">
-          <div class="telemetry-grid">
-            <div class="metric-pill m-water">
-              <div class="metric-label">Water (T)</div>
-              <div class="metric-val" id="metricWater">--</div>
-            </div>
-            <div class="metric-pill m-room">
-              <div class="metric-label">Room (Tᵣ)</div>
-              <div class="metric-val" id="metricRoom">20.0°C</div>
-            </div>
-            <div class="metric-pill m-delta">
-              <div class="metric-label">Gap (ΔT)</div>
-              <div class="metric-val" id="metricDelta">--</div>
-            </div>
-            <div class="metric-pill m-rate">
-              <div class="metric-label">Rate (dT/dt)</div>
-              <div class="metric-val" id="metricRate">--</div>
-            </div>
-          </div>
-
-          <div class="formula-box">
-            <div class="formula-equation" aria-label="Newton's Law of Cooling Formula">
-              <span class="f-var f-water">T(t)</span>
-              <span>=</span>
-              <span class="f-var f-room" id="eqRoom">20°</span>
-              <span>+ (</span>
-              <span class="f-var f-water" id="eqStart">95°</span>
-              <span>−</span>
-              <span class="f-var f-room" id="eqRoom2">20°</span>
-              <span>) · e</span>
-              <sup>−<span class="f-var f-k" id="eqK">0.017</span>·<span class="f-var f-t" id="eqTime">0m</span></sup>
-            </div>
-
-            <div class="heat-flow-row">
-              <span class="heat-flow-label">Heat Escape:</span>
-              <div class="heat-meter-track">
-                <div class="heat-meter-fill" id="heatMeterFill"></div>
-              </div>
-              <span class="heat-flow-tag" id="heatFlowTag">Waiting</span>
-            </div>
-
-            <div class="formula-takeaway" id="formulaTakeaway">
-              <strong>Newton’s Law:</strong> Cooling speed is proportional to the temperature difference <strong>ΔT = T − Tᵣ</strong>. Hotter water loses heat fast at first, then gently flattens out at room temperature!
-            </div>
           </div>
         </div>
       </section>

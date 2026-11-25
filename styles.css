@@ -81,13 +81,20 @@ body::before {
 .app-shell {
   position: relative;
   z-index: 1;
-  max-width: 1380px;
+  max-width: 1360px;
   margin: 0 auto;
-  padding: 12px 16px 18px;
+  padding: 16px 20px 24px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   min-height: 100vh;
+}
+
+/* Keyboard accessibility focus ring */
+button:focus-visible,
+input[type="range"]:focus-visible {
+  outline: 3.5px solid #2591E6;
+  outline-offset: 2px;
 }
 
 /* ================= TOP HEADER BAR ================= */
@@ -95,24 +102,24 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
   background: var(--cream-card);
   border: var(--stroke);
   border-radius: var(--radius-pill);
-  padding: 8px 14px;
+  padding: 10px 18px;
   box-shadow: var(--shadow-card);
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .brand-icon {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: linear-gradient(145deg, #FFE066, #FF9F43);
   border: var(--stroke);
@@ -124,54 +131,42 @@ body::before {
 
 .brand-title {
   margin: 0;
-  font-size: 1.22rem;
+  font-size: 1.32rem;
   font-weight: 700;
-  line-height: 1.05;
+  line-height: 1.1;
   letter-spacing: -0.01em;
-}
-
-.brand-sub {
-  display: inline-block;
-  margin-top: 2px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--lavender-dark);
-  background: var(--lavender-soft);
-  border: 1.8px solid var(--lavender);
-  border-radius: var(--radius-pill);
-  padding: 1px 8px;
 }
 
 /* 3-Step Pazu Progress Pill */
 .step-pills {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   background: #F6EFE4;
   border: 2.5px solid var(--ink);
   border-radius: var(--radius-pill);
-  padding: 4px 6px;
+  padding: 5px 7px;
 }
 
 .step-pill {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
+  gap: 6px;
+  padding: 6px 14px;
   border-radius: var(--radius-pill);
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--ink-soft);
   transition: all 0.25s var(--bounce);
 }
 
 .step-pill .step-num {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: #E7D9C6;
   color: var(--ink);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   display: grid;
   place-items: center;
 }
@@ -311,17 +306,17 @@ body::before {
 /* ================= MAIN 2-COLUMN WORKSPACE ================= */
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1.24fr) minmax(350px, 0.96fr);
-  gap: 14px;
+  grid-template-columns: minmax(0, 1.18fr) minmax(380px, 1fr);
+  gap: 18px;
   flex: 1;
-  align-items: start;
+  align-items: stretch;
 }
 
 .left-col,
 .right-col {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   min-width: 0;
 }
 
@@ -430,22 +425,23 @@ body::before {
   color: var(--coral-dark);
 }
 
-/* ================= CONTROL DOCK (4 CHUNKY CARDS) ================= */
+/* ================= CONTROL DOCK (4 CLEAN CARDS) ================= */
 .controls-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 14px;
 }
 
 .control-card {
   background: var(--cream-card);
   border: var(--stroke);
   border-radius: var(--radius-md);
-  padding: 11px 13px;
+  padding: 15px 16px;
   box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  justify-content: space-between;
+  gap: 11px;
   position: relative;
 }
 
@@ -458,21 +454,21 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 8px;
 }
 
 .control-label {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.86rem;
+  gap: 7px;
+  font-size: 0.98rem;
   font-weight: 700;
 }
 
 .control-badge {
-  font-size: 0.88rem;
+  font-size: 0.98rem;
   font-weight: 700;
-  padding: 2px 10px;
+  padding: 3px 12px;
   border-radius: var(--radius-pill);
   border: 2.2px solid var(--ink);
   background: #FFFFFF;
@@ -484,14 +480,14 @@ body::before {
 .theme-lavender .control-badge { background: var(--lavender-soft); color: #5F3DC4; }
 .theme-mint .control-badge { background: var(--mint-soft); color: #0B7255; }
 
-/* Chunky Pazu Range Sliders */
+/* Chunky Accessible Pazu Range Sliders */
 .pazu-slider {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 14px;
+  height: 16px;
   border-radius: var(--radius-pill);
-  border: 2.4px solid var(--ink);
+  border: 2.5px solid var(--ink);
   background: #FFFFFF;
   outline: none;
   cursor: pointer;
@@ -510,8 +506,8 @@ body::before {
 .pazu-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: #FFFFFF;
   border: 3px solid var(--ink);
@@ -521,17 +517,17 @@ body::before {
 }
 
 .pazu-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.12);
+  transform: scale(1.1);
 }
 
 .pazu-slider::-webkit-slider-thumb:active {
   cursor: grabbing;
-  transform: scale(1.18);
+  transform: scale(1.16);
 }
 
 .pazu-slider::-moz-range-thumb {
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: #FFFFFF;
   border: 3px solid var(--ink);
@@ -542,23 +538,29 @@ body::before {
 .preset-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 5px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .chip-btn {
-  border: 2px solid var(--ink);
+  flex: 1;
+  min-height: 34px;
+  border: 2.2px solid var(--ink);
   border-radius: var(--radius-pill);
   background: #FFFFFF;
   color: var(--ink);
   font-family: inherit;
-  font-size: 0.72rem;
+  font-size: 0.84rem;
   font-weight: 700;
-  padding: 3px 9px;
+  padding: 5px 12px;
   cursor: pointer;
-  box-shadow: 0 2px 0 var(--ink);
+  box-shadow: 0 2.5px 0 var(--ink);
   transition: transform 0.12s var(--bounce), background 0.15s;
+  white-space: nowrap;
+}
+
+.panel-tools .chip-btn {
+  flex: 0 0 auto;
 }
 
 .chip-btn:hover {
@@ -579,44 +581,44 @@ body::before {
 .iso-meta {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: 0.74rem;
+  justify-content: center;
+  font-size: 0.9rem;
   font-weight: 700;
-  color: var(--ink-soft);
-}
-
-.iso-pill-name {
   color: var(--lavender-dark);
+  background: rgba(255, 255, 255, 0.72);
+  border: 2px solid #D0BFFF;
+  border-radius: var(--radius-pill);
+  padding: 5px 12px;
 }
 
 /* Time speed controls */
 .speed-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .speed-pills {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   flex: 1;
-  flex-wrap: wrap;
 }
 
 .speed-pill {
   flex: 1;
-  min-width: 42px;
+  min-height: 38px;
+  min-width: 44px;
   text-align: center;
   border: 2.2px solid var(--ink);
   border-radius: var(--radius-pill);
   background: #FFFFFF;
   color: var(--ink);
   font-family: inherit;
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   font-weight: 700;
-  padding: 5px 4px;
+  padding: 6px 4px;
   cursor: pointer;
   box-shadow: 0 2.5px 0 var(--ink);
   transition: transform 0.12s var(--bounce), background 0.15s;
@@ -633,49 +635,72 @@ body::before {
 }
 
 .play-pause-btn {
-  padding: 5px 12px;
-  font-size: 0.82rem;
+  min-height: 38px;
+  padding: 6px 14px;
+  font-size: 0.92rem;
 }
 
-/* ================= RIGHT COLUMN: GRAPH + FORMULA ================= */
+/* ================= RIGHT COLUMN: SPACIOUS GRAPH CARD ================= */
 .panel-card {
   background: var(--cream-card);
   border: var(--stroke);
   border-radius: var(--radius-lg);
-  padding: 13px 14px;
+  padding: 18px 20px;
   box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
+}
+
+.graph-card {
+  flex: 1;
 }
 
 .panel-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.panel-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .panel-title {
   margin: 0;
-  font-size: 1.02rem;
+  font-size: 1.15rem;
   font-weight: 700;
   display: flex;
   align-items: center;
   gap: 7px;
 }
 
+.eq-horizon-pill {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1864AB;
+  background: var(--sky-soft);
+  border: 2px solid #74C0FC;
+  border-radius: var(--radius-pill);
+  padding: 3px 11px;
+}
+
 .panel-tools {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .graph-wrap {
   position: relative;
   width: 100%;
-  height: 270px;
+  flex: 1;
+  min-height: 380px;
 }
 
 #tempGraph {
@@ -688,143 +713,27 @@ body::before {
 .run-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  min-height: 22px;
+  gap: 8px;
+  min-height: 28px;
 }
 
 .legend-item {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 0.72rem;
+  gap: 6px;
+  font-size: 0.82rem;
   font-weight: 700;
   background: #F9F2E7;
-  border: 1.8px solid var(--ink);
+  border: 2px solid var(--ink);
   border-radius: var(--radius-pill);
-  padding: 2px 9px;
+  padding: 4px 12px;
 }
 
 .legend-swatch {
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   border: 1.5px solid var(--ink);
-}
-
-/* Telemetry 4-up pills */
-.telemetry-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.metric-pill {
-  border: 2.4px solid var(--ink);
-  border-radius: 16px;
-  padding: 7px 6px;
-  text-align: center;
-  background: #FFFFFF;
-}
-
-.metric-pill.m-water { background: #FFF0F0; }
-.metric-pill.m-room { background: #EBF7FF; }
-.metric-pill.m-delta { background: #FFF7E0; }
-.metric-pill.m-rate { background: #F1ECFF; }
-
-.metric-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--ink-soft);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-.metric-val {
-  font-size: 1rem;
-  font-weight: 700;
-  margin-top: 2px;
-  color: var(--ink);
-}
-
-/* Formula + Cooling Speedometer Box */
-.formula-box {
-  background: linear-gradient(180deg, #FFFDF5 0%, #FFF4DB 100%);
-  border: 2.5px solid var(--ink);
-  border-radius: 18px;
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.formula-equation {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 4px;
-  font-size: 0.9rem;
-  font-weight: 700;
-  background: #FFFFFF;
-  border: 2px dashed #D8C2A8;
-  border-radius: 12px;
-  padding: 6px 8px;
-}
-
-.f-var {
-  padding: 1px 6px;
-  border-radius: 8px;
-  font-weight: 700;
-}
-
-.f-water { background: var(--coral-soft); color: #C92A2A; }
-.f-room { background: var(--sky-soft); color: #1864AB; }
-.f-k { background: var(--lavender-soft); color: #5F3DC4; }
-.f-t { background: var(--mint-soft); color: #0B7255; }
-
-.heat-flow-row {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-
-.heat-flow-label {
-  font-size: 0.76rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.heat-meter-track {
-  flex: 1;
-  height: 14px;
-  background: #FFFFFF;
-  border: 2.2px solid var(--ink);
-  border-radius: var(--radius-pill);
-  overflow: hidden;
-  padding: 1.5px;
-}
-
-.heat-meter-fill {
-  height: 100%;
-  width: 0%;
-  border-radius: var(--radius-pill);
-  background: linear-gradient(90deg, #54B8FF 0%, #FFD93D 45%, #FF6B6B 100%);
-  transition: width 0.18s ease-out;
-}
-
-.heat-flow-tag {
-  font-size: 0.74rem;
-  font-weight: 700;
-  min-width: 72px;
-  text-align: right;
-  color: var(--coral-dark);
-}
-
-.formula-takeaway {
-  font-size: 0.77rem;
-  line-height: 1.32;
-  color: var(--ink-soft);
-  font-weight: 600;
 }
 
 /* ================= SVG SCENE ANIMATIONS ================= */
@@ -1116,17 +1025,18 @@ body::before {
     grid-template-columns: 1fr;
   }
   .graph-wrap {
-    height: 250px;
+    min-height: 320px;
   }
 }
 
 @media (max-width: 640px) {
   .app-shell {
-    padding: 8px 10px 14px;
+    padding: 10px 12px 18px;
+    gap: 12px;
   }
   .top-bar {
     border-radius: 22px;
-    padding: 8px 10px;
+    padding: 10px 12px;
   }
   .step-pills {
     order: 3;
@@ -1134,14 +1044,11 @@ body::before {
     justify-content: space-between;
   }
   .step-pill {
-    padding: 4px 8px;
-    font-size: 0.74rem;
+    padding: 5px 10px;
+    font-size: 0.8rem;
   }
   .controls-grid {
     grid-template-columns: 1fr;
-  }
-  .telemetry-grid {
-    grid-template-columns: repeat(2, 1fr);
   }
   .newton-bubble {
     max-width: 68%;
@@ -1152,10 +1059,10 @@ body::before {
     height: 32px;
   }
   .newton-text {
-    font-size: 0.72rem;
+    font-size: 0.74rem;
   }
   .btn-big {
-    font-size: 0.94rem;
-    padding: 9px 18px;
+    font-size: 0.96rem;
+    padding: 10px 18px;
   }
 }
