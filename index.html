@@ -23,26 +23,30 @@
           </svg>
         </div>
         <div>
-          <h1 class="brand-title">Newton’s Tea Lab</h1>
+          <h1 class="brand-title" id="brandTitle">Newton’s Tea Lab</h1>
         </div>
       </div>
 
       <nav class="step-pills" aria-label="Experiment steps">
         <div class="step-pill active" id="stepBoil">
           <span class="step-num">1</span>
-          <span>Boil</span>
+          <span id="stepBoilLabel">Boil</span>
         </div>
         <div class="step-pill" id="stepPour">
           <span class="step-num">2</span>
-          <span>Pour</span>
+          <span id="stepPourLabel">Pour</span>
         </div>
         <div class="step-pill" id="stepCool">
           <span class="step-num">3</span>
-          <span>Cool</span>
+          <span id="stepCoolLabel">Cool</span>
         </div>
       </nav>
 
       <div class="top-actions">
+        <div class="lang-toggle" id="langToggle" role="group" aria-label="Language">
+          <button class="lang-btn active" data-lang="en" title="English">EN</button>
+          <button class="lang-btn" data-lang="nl" title="Nederlands (Vlaams)">NL</button>
+        </div>
         <button class="pazu-btn btn-yellow" id="missionsBtn" title="Discovery Missions">
           <span>★</span>
           <span id="missionsCount">0/4</span>
@@ -253,7 +257,7 @@
             <g id="kettleThermoControl" class="svg-slider-widget" transform="translate(18, 26)" role="slider" tabindex="0" aria-label="Kettle target temperature in Celsius" aria-valuemin="25" aria-valuemax="100" aria-valuenow="95">
               <rect x="0" y="4" width="94" height="302" rx="22" fill="rgba(74, 53, 40, 0.14)"/>
               <rect x="0" y="0" width="94" height="302" rx="22" fill="#FFFDF8" stroke="#4A3528" stroke-width="3"/>
-              <text x="47" y="24" text-anchor="middle" font-size="11.5" font-weight="700" fill="#C92A2A">🔥 KETTLE</text>
+              <text id="kettleControlTitle" x="47" y="24" text-anchor="middle" font-size="11.5" font-weight="700" fill="#C92A2A">🔥 KETTLE</text>
               <!-- Scale ticks -->
               <g font-size="9.5" font-weight="700" fill="#8B7364" text-anchor="end">
                 <text x="34" y="49">100°</text>
@@ -287,7 +291,7 @@
             <g id="roomThermoControl" class="svg-slider-widget" transform="translate(604, 26)" role="slider" tabindex="0" aria-label="Room temperature in Celsius" aria-valuemin="-20" aria-valuemax="40" aria-valuenow="20">
               <rect x="0" y="4" width="94" height="302" rx="22" fill="rgba(74, 53, 40, 0.14)"/>
               <rect x="0" y="0" width="94" height="302" rx="22" fill="#FFFDF8" stroke="#4A3528" stroke-width="3"/>
-              <text x="47" y="24" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1864AB"><tspan id="roomWeatherIcon">🌤️</tspan> ROOM</text>
+              <text x="47" y="24" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1864AB"><tspan id="roomWeatherIcon">🌤️</tspan> <tspan id="roomControlTitle">ROOM</tspan></text>
               <!-- Scale ticks (40° to -20°, with 0° freezing line) -->
               <g font-size="9.5" font-weight="700" fill="#8B7364" text-anchor="start">
                 <text x="63" y="49">40°</text>
@@ -321,7 +325,7 @@
             <g id="isoControl" class="svg-slider-widget" transform="translate(710, 26)" role="slider" tabindex="0" aria-label="Thermos isolation factor percentage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="45">
               <rect x="0" y="4" width="94" height="302" rx="22" fill="rgba(74, 53, 40, 0.14)"/>
               <rect x="0" y="0" width="94" height="302" rx="22" fill="#FFFDF8" stroke="#4A3528" stroke-width="3"/>
-              <text x="47" y="24" text-anchor="middle" font-size="11" font-weight="700" fill="#5F3DC4">🧥 ISOLATE</text>
+              <text id="isoControlTitle" x="47" y="24" text-anchor="middle" font-size="11" font-weight="700" fill="#5F3DC4">🧥 ISOLATE</text>
               <!-- Scale ticks -->
               <g font-size="9.5" font-weight="700" fill="#8B7364" text-anchor="start">
                 <text x="60" y="51">100%</text>
@@ -365,8 +369,8 @@
                 <path d="M318 206 Q380 154 434 190" fill="none" stroke="#FF6B6B" stroke-width="5" stroke-dasharray="10 8" stroke-linecap="round"/>
                 <path d="M423 176 L440 192 L418 197" fill="none" stroke="#FF6B6B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
               </g>
-              <rect x="314" y="146" width="128" height="26" rx="13" fill="#FFFDF7" stroke="#4A3528" stroke-width="2.4"/>
-              <text x="378" y="163" text-anchor="middle" font-size="11.5" font-weight="700" fill="#E04848">Drag or Tap Pour!</text>
+              <rect x="294" y="146" width="168" height="26" rx="13" fill="#FFFDF7" stroke="#4A3528" stroke-width="2.4"/>
+              <text id="dragHintText" x="378" y="163" text-anchor="middle" font-size="11.2" font-weight="700" fill="#E04848">Drag or Tap Pour!</text>
             </g>
 
             <!-- ===== POURING WATER STREAM ===== -->
@@ -550,7 +554,7 @@
       <section class="panel-card graph-card" aria-label="Temperature versus Time Graph">
         <div class="panel-head">
           <div class="panel-title-group">
-            <h2 class="panel-title">📈 Temperature vs. Time</h2>
+            <h2 class="panel-title" id="graphTitle">📈 Temperature vs. Time</h2>
             <span class="eq-horizon-pill" id="eqHorizonPill">Equilibrium ≈ 5h</span>
           </div>
           <div class="panel-tools">
@@ -614,7 +618,7 @@
         <h2 id="guideTitle">🍎 How Newton’s Law of Cooling Works</h2>
         <button class="pazu-btn btn-cream icon-only" data-close-modal="guideModal" aria-label="Close">✕</button>
       </div>
-      <div class="guide-steps">
+      <div class="guide-steps" id="guideSteps">
         <div class="guide-card">
           <h4>1. Big Temperature Gap = Fast Cooling!</h4>
           <p>When boiling 95°C water meets a cool 20°C room, the gap (ΔT = 75°C) is huge, so heat escapes super quickly and the graph drops steeply.</p>
@@ -639,6 +643,7 @@
     </div>
   </div>
 
+  <script defer src="js/i18n.js"></script>
   <script defer src="js/audio.js"></script>
   <script defer src="js/graph.js"></script>
   <script defer src="js/game.js"></script>

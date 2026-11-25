@@ -89,21 +89,38 @@
     return { T, iceFraction: ice };
   }
 
+  function i18n() {
+    return (global.NewtonI18n && global.NewtonI18n.dict()) || {
+      axisTime: 'Time →',
+      axisTemp: 'Temperature (°C)',
+      graphRoomTag: (r) => `Room ${r}°C`,
+      graphFreezeLine: '❄️ 0°C Freezing Point',
+      graphLiveIce: (pct) => `🧊 0.0°C (${pct}% ice)`,
+      graphTooltipIce: 'Ice',
+      graphEmptyReady: 'Pour hot water into the thermos to start plotting!',
+      graphEmptyIdle: 'Boil & pour water to watch Newton’s cooling curve!',
+      unitHour: 'h',
+      unitMin: 'm',
+      unitSec: 's',
+    };
+  }
+
   function formatDurationShort(minutes) {
+    const t = i18n();
     if (minutes < 1) {
-      return Math.round(minutes * 60) + 's';
+      return Math.round(minutes * 60) + t.unitSec;
     }
     if (minutes < 60) {
       const m = Math.floor(minutes);
       const s = Math.round((minutes - m) * 60);
-      if (s === 0 || minutes >= 10) return Math.round(minutes) + 'm';
-      return m + 'm ' + s + 's';
+      if (s === 0 || minutes >= 10) return Math.round(minutes) + t.unitMin;
+      return m + t.unitMin + ' ' + s + t.unitSec;
     }
     const hrs = Math.floor(minutes / 60);
     const remM = Math.round(minutes - hrs * 60);
-    if (remM === 0) return hrs + 'h';
-    if (remM === 60) return (hrs + 1) + 'h';
-    return hrs + 'h ' + remM + 'm';
+    if (remM === 0) return hrs + t.unitHour;
+    if (remM === 60) return (hrs + 1) + t.unitHour;
+    return hrs + t.unitHour + ' ' + remM + t.unitMin;
   }
 
   /* Round raw equilibrium minutes up to an evenly divisible, readable axis max */
@@ -151,12 +168,13 @@
   }
 
   function formatAxisTick(minutes, maxMinutes) {
+    const t = i18n();
     if (minutes === 0) return '0';
     if (maxMinutes <= 120) {
-      return Math.round(minutes) + 'm';
+      return Math.round(minutes) + t.unitMin;
     }
     const hrs = minutes / 60;
-    return Number.isInteger(hrs) ? hrs + 'h' : hrs.toFixed(1) + 'h';
+    return Number.isInteger(hrs) ? hrs + t.unitHour : hrs.toFixed(1) + t.unitHour;
   }
 
   class CoolingGraph {
@@ -290,14 +308,15 @@
       ctx.restore();
 
       // Axis titles
+      const tDict = i18n();
       ctx.save();
       ctx.font = '700 12.5px "Fredoka", "Nunito", ui-rounded, sans-serif';
       ctx.fillStyle = '#6E5547';
       ctx.textAlign = 'center';
-      ctx.fillText('Time →', pad.left + plotW / 2, h - 14);
+      ctx.fillText(tDict.axisTime, pad.left + plotW / 2, h - 14);
       ctx.translate(16, pad.top + plotH / 2);
       ctx.rotate(-Math.PI / 2);
-      ctx.fillText('Temperature (°C)', 0, 0);
+      ctx.fillText(tDict.axisTemp, 0, 0);
       ctx.restore();
 
       // Clip plotting interior
@@ -321,7 +340,7 @@
       ctx.setLineDash([]);
 
       // Room temp pill tag inside chart
-      const roomLabel = 'Room ' + state.roomTemp.toFixed(0) + '°C';
+      const roomLabel = tDict.graphRoomTag(state.roomTemp.toFixed(0));
       ctx.font = '700 12px "Fredoka", "Nunito", ui-rounded, sans-serif';
       const tagW = ctx.measureText(roomLabel).width + 16;
       const tagH = 22;
@@ -355,7 +374,7 @@
         ctx.fillStyle = '#0C8599';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'bottom';
-        ctx.fillText('❄️ 0°C Freezing Point', pad.left + 10, freezeY - 4);
+        ctx.fillText(tDict.graphFreezeLine, pad.left + 10, freezeY - 4);
         ctx.restore();
       }
 
@@ -484,7 +503,7 @@
           const icePct = Math.round((state.iceFraction || last.iceFraction || 0) * 100);
           const liveLabel =
             icePct > 0 && icePct < 100
-              ? `🧊 0.0°C (${icePct}% ice)`
+              ? tDict.graphLiveIce(icePct)
               : icePct >= 100
                 ? `🧊 ${last.T.toFixed(1)}°C`
                 : `${last.T.toFixed(1)}°C`;
@@ -516,8 +535,8 @@
         ctx.textBaseline = 'middle';
         const msg =
           state.phase === 'ready_to_pour'
-            ? 'Pour hot water into the thermos to start plotting!'
-            : 'Boil & pour water to watch Newton’s cooling curve!';
+            ? tDict.graphEmptyReady
+            : tDict.graphEmptyIdle;
         ctx.fillText(msg, pad.left + plotW / 2, pad.top + plotH * 0.4);
         ctx.restore();
       }
@@ -563,7 +582,7 @@
         ctx.stroke();
 
         const ptIce = Math.round((closest.iceFraction || 0) * 100);
-        const phaseTag = ptIce > 0 && ptIce < 100 ? `  •  🧊 ${ptIce}%` : ptIce >= 100 ? '  •  🧊 Ice' : '';
+        const phaseTag = ptIce > 0 && ptIce < 100 ? `  •  🧊 ${ptIce}%` : ptIce >= 100 ? `  •  🧊 ${tDict.graphTooltipIce}` : '';
         const line1 = formatDurationShort(closest.t) + '  •  ' + closest.T.toFixed(1) + '°C' + phaseTag;
         ctx.font = '700 12.5px "Fredoka", "Nunito", ui-rounded, sans-serif';
         const boxW = ctx.measureText(line1).width + 22;

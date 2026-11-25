@@ -197,6 +197,42 @@ button:focus-visible,
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #F6EFE4;
+  border: 2.5px solid var(--ink);
+  border-radius: var(--radius-pill);
+  padding: 3px;
+  box-shadow: 0 3px 0 rgba(74, 53, 40, 0.16);
+}
+
+.lang-btn {
+  border: 2px solid transparent;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: transform 0.12s var(--bounce), background 0.15s, color 0.15s;
+}
+
+.lang-btn:hover {
+  color: var(--ink);
+}
+
+.lang-btn.active {
+  background: var(--yellow);
+  color: var(--ink);
+  border-color: var(--ink);
+  box-shadow: 0 2px 0 var(--ink);
 }
 
 /* ================= PAZU JELLY BUTTONS ================= */

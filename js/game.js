@@ -8,6 +8,7 @@
   'use strict';
 
   const AudioFX = global.NewtonAudio;
+  const I18n = global.NewtonI18n;
   const {
     CoolingGraph,
     RUN_COLORS,
@@ -16,28 +17,11 @@
     calcEquilibriumTimeMin,
   } = global.NewtonGraph;
 
-  const MISSIONS = [
-    {
-      id: 'first_brew',
-      title: 'First Brew Scientist',
-      desc: 'Boil water in the kettle and pour it into the thermos flask.',
-    },
-    {
-      id: 'super_keeper',
-      title: 'Cozy Tea Keeper',
-      desc: 'Keep water above 65°C after 2 hours (120 min) in the thermos! (Hint: High isolation!)',
-    },
-    {
-      id: 'arctic_cool',
-      title: 'Arctic Speed-Cool',
-      desc: 'Start at 85°C+ and cool below 30°C within 30 minutes! (Hint: Cold room + low isolation!)',
-    },
-    {
-      id: 'compare_curves',
-      title: 'Curve Comparator',
-      desc: 'Pin a run with 📌 Compare and pour a second experiment to compare two curves!',
-    },
-  ];
+  function t() {
+    return I18n.dict();
+  }
+
+  const MISSION_IDS = ['first_brew', 'super_keeper', 'arctic_cool', 'compare_curves'];
 
   // Exponential mapping from Isolation Factor (0..100%) to k (min^-1)
   function isolationToK(iso) {
@@ -47,10 +31,11 @@
   }
 
   function isolationProfile(iso) {
-    if (iso <= 25) return { name: 'Thin Tin Flask', shortName: 'Thin Tin', skin: 'skinBare' };
-    if (iso <= 55) return { name: 'Cozy Knit Sleeve', shortName: 'Knit Sleeve', skin: 'skinKnit' };
-    if (iso <= 85) return { name: 'Thermo Jacket', shortName: 'Thermo Coat', skin: 'skinJacket' };
-    return { name: 'Vacuum Shield', shortName: 'Vacuum', skin: 'skinVacuum' };
+    const d = t();
+    if (iso <= 25) return { name: d.isoThinFull, shortName: d.isoThinShort, skin: 'skinBare' };
+    if (iso <= 55) return { name: d.isoKnitFull, shortName: d.isoKnitShort, skin: 'skinKnit' };
+    if (iso <= 85) return { name: d.isoJacketFull, shortName: d.isoJacketShort, skin: 'skinJacket' };
+    return { name: d.isoVacuumFull, shortName: d.isoVacuumShort, skin: 'skinVacuum' };
   }
 
   // Smooth color interpolation for liquid & thermometer based on Celsius (-20..100)
@@ -80,13 +65,14 @@
   }
 
   function formatElapsedClock(minutes) {
+    const d = t();
     const totalSec = Math.floor(minutes * 60);
     const hrs = Math.floor(totalSec / 3600);
     const mins = Math.floor((totalSec % 3600) / 60);
     const secs = totalSec % 60;
     const pad2 = (n) => (n < 10 ? '0' + n : '' + n);
-    if (hrs > 0) return `${hrs}h ${pad2(mins)}m`;
-    return `${mins}m ${pad2(secs)}s`;
+    if (hrs > 0) return `${hrs}${d.unitHour} ${pad2(mins)}${d.unitMin}`;
+    return `${mins}${d.unitMin} ${pad2(secs)}${d.unitSec}`;
   }
 
   function lerp(a, b, t) {
@@ -144,6 +130,7 @@
     // Missions & hints
     completedMissions: new Set(),
     lastHintKey: '',
+    lastHintRender: () => t().tipIdle,
     lastTickSound: 0,
   };
 
@@ -152,16 +139,18 @@
 
   function cacheDom() {
     const ids = [
-      'stepBoil', 'stepPour', 'stepCool',
+      'brandTitle', 'stepBoil', 'stepPour', 'stepCool',
+      'stepBoilLabel', 'stepPourLabel', 'stepCoolLabel',
+      'langToggle',
       'missionsBtn', 'missionsCount', 'guideBtn', 'soundBtn', 'newRunBtn',
       'newtonBubble', 'newtonText', 'kitchenSvg',
       'wallStopTop', 'wallStopBot', 'skyStopTop', 'skyStopBot',
       'hillBack', 'hillFront', 'windowSun', 'windowClouds', 'windowSnow',
       'clockHourHand', 'clockMinHand',
-      'kettleThermoControl', 'kettleThermoFill', 'kettleThermoBulb', 'kettleThermoKnob', 'kettleTargetBadge',
-      'roomThermoControl', 'roomThermoFill', 'roomThermoBulb', 'roomThermoKnob', 'roomThermoText', 'roomWeatherIcon',
-      'isoControl', 'isoTrackFill', 'isoKnob', 'isoBadge', 'isoName',
-      'heaterGlow', 'baseLed', 'dragHint', 'pourStream', 'pourArcOuter',
+      'kettleThermoControl', 'kettleControlTitle', 'kettleThermoFill', 'kettleThermoBulb', 'kettleThermoKnob', 'kettleTargetBadge',
+      'roomThermoControl', 'roomControlTitle', 'roomThermoFill', 'roomThermoBulb', 'roomThermoKnob', 'roomThermoText', 'roomWeatherIcon',
+      'isoControl', 'isoControlTitle', 'isoTrackFill', 'isoKnob', 'isoBadge', 'isoName',
+      'heaterGlow', 'baseLed', 'dragHint', 'dragHintText', 'pourStream', 'pourArcOuter',
       'heatWavesGroup', 'thermosSteam', 'skinBare', 'skinKnit', 'skinJacket', 'skinVacuum',
       'thermosLiquid', 'thermosSurface', 'thermosIceLayer', 'thermosMouth', 'thermosBlushL', 'thermosBlushR',
       'thermosCap', 'thermosTempText',
@@ -169,9 +158,9 @@
       'kettleBubbles', 'kettleMouth', 'kettleBlushL', 'kettleBlushR', 'kettleTempText',
       'stageActionBar', 'primaryActionBtn',
       'elapsedBadge', 'playPauseBtn', 'speedPills',
-      'tempGraph', 'eqHorizonPill', 'saveCompareBtn', 'clearRunsBtn', 'runLegend',
+      'tempGraph', 'graphTitle', 'eqHorizonPill', 'saveCompareBtn', 'clearRunsBtn', 'runLegend',
       'starToast', 'starToastText',
-      'missionsModal', 'missionList', 'guideModal',
+      'missionsModal', 'missionsTitle', 'missionList', 'guideModal', 'guideTitle', 'guideSteps',
     ];
     ids.forEach((id) => {
       el[id] = document.getElementById(id);
@@ -182,20 +171,88 @@
   let toastTimeout = null;
 
   // ================= NEWTON MASCOT HINTS =================
-  function setNewtonMessage(key, htmlText) {
+  function setNewtonMessage(key, renderOrHtml) {
+    const renderFn = typeof renderOrHtml === 'function' ? renderOrHtml : () => renderOrHtml;
     if (state.lastHintKey === key) return;
     state.lastHintKey = key;
-    el.newtonText.innerHTML = htmlText;
+    state.lastHintRender = renderFn;
+    el.newtonText.innerHTML = renderFn();
     el.newtonBubble.classList.remove('pop');
     void el.newtonBubble.offsetWidth;
     el.newtonBubble.classList.add('pop');
   }
 
+  // ================= GUIDE & LANGUAGE =================
+  function renderGuide() {
+    const d = t();
+    el.guideTitle.textContent = d.guideTitle;
+    el.guideSteps.innerHTML = d.guideCards
+      .map((card) => `<div class="guide-card"><h4>${card.h}</h4><p>${card.p}</p></div>`)
+      .join('');
+  }
+
+  function applyLanguage() {
+    const lang = I18n.getLang();
+    const d = t();
+
+    if (document.documentElement) {
+      document.documentElement.lang = d.htmlLang;
+    }
+    document.title = d.pageTitle;
+
+    el.brandTitle.textContent = d.brandTitle;
+    el.stepBoilLabel.textContent = d.stepBoil;
+    el.stepPourLabel.textContent = d.stepPour;
+    el.stepCoolLabel.textContent = d.stepCool;
+    el.newRunBtn.textContent = d.newRunBtn;
+    el.newRunBtn.title = d.newRunTitle;
+    el.missionsBtn.title = d.missionsBtnTitle;
+    el.guideBtn.title = d.guideBtnTitle;
+    el.guideBtn.setAttribute('aria-label', d.guideBtnTitle);
+    el.soundBtn.title = d.soundBtnTitle;
+    el.soundBtn.setAttribute('aria-label', d.soundBtnTitle);
+
+    el.kettleControlTitle.textContent = d.kettleControlTitle;
+    el.roomControlTitle.textContent = d.roomControlTitle;
+    el.isoControlTitle.textContent = d.isoControlTitle;
+    el.dragHintText.textContent = d.dragHintText;
+
+    el.graphTitle.textContent = d.graphTitle;
+    el.saveCompareBtn.textContent = d.btnCompare;
+    el.saveCompareBtn.title = d.btnCompareTitle;
+    el.clearRunsBtn.textContent = d.btnClear;
+    el.clearRunsBtn.title = d.btnClearTitle;
+
+    el.missionsTitle.textContent = d.missionsTitle;
+
+    el.langToggle.querySelectorAll('.lang-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.lang === lang);
+    });
+
+    renderGuide();
+    renderMissions();
+    renderLegend();
+    syncActionBar();
+    updateIsolationVisuals();
+    updateEquilibriumHorizonUi();
+    updateThermosVisuals();
+    updateClockHands();
+
+    if (state.lastHintRender) {
+      el.newtonText.innerHTML = state.lastHintRender();
+    }
+    if (graph) {
+      renderGraph();
+    }
+  }
+
   // ================= MISSIONS =================
   function renderMissions() {
-    el.missionsCount.textContent = `${state.completedMissions.size}/${MISSIONS.length}`;
-    el.missionList.innerHTML = MISSIONS.map((m) => {
-      const done = state.completedMissions.has(m.id);
+    const d = t();
+    el.missionsCount.textContent = `${state.completedMissions.size}/${MISSION_IDS.length}`;
+    el.missionList.innerHTML = MISSION_IDS.map((id) => {
+      const m = d.missions[id];
+      const done = state.completedMissions.has(id);
       return `
         <div class="mission-item ${done ? 'completed' : ''}">
           <div class="mission-star">${done ? '⭐' : '☆'}</div>
@@ -210,13 +267,14 @@
 
   function unlockMission(id) {
     if (state.completedMissions.has(id)) return;
-    const mission = MISSIONS.find((m) => m.id === id);
+    const d = t();
+    const mission = d.missions[id];
     if (!mission) return;
     state.completedMissions.add(id);
     renderMissions();
     AudioFX.fanfare();
 
-    el.starToastText.textContent = `Star Earned: ${mission.title}!`;
+    el.starToastText.textContent = d.starEarned(mission.title);
     el.starToast.classList.add('show');
     if (toastTimeout) global.clearTimeout(toastTimeout);
     toastTimeout = global.setTimeout(() => {
@@ -265,39 +323,40 @@
   function syncActionBar() {
     const p = state.phase;
     const bar = el.stageActionBar;
+    const d = t();
 
     if (p === 'idle') {
       bar.innerHTML = `
         <button class="pazu-btn btn-coral btn-big pulse-cta" id="primaryActionBtn">
-          🔥 Boil Water to ${state.kettleTarget}°C
+          ${d.btnBoil(state.kettleTarget)}
         </button>
       `;
       document.getElementById('primaryActionBtn').addEventListener('click', startBoiling);
     } else if (p === 'boiling') {
       bar.innerHTML = `
         <div class="stage-status-pill" id="boilStatusPill">
-          🫧 Heating... ${Math.round(state.kettleTemp)}°C / ${state.kettleTarget}°C
+          ${d.pillHeating(Math.round(state.kettleTemp), state.kettleTarget)}
         </div>
-        <button class="pazu-btn btn-yellow" id="instantBoilBtn" title="Skip to target temperature">⚡ Instant</button>
+        <button class="pazu-btn btn-yellow" id="instantBoilBtn" title="${d.btnInstantTitle}">${d.btnInstant}</button>
       `;
       document.getElementById('instantBoilBtn').addEventListener('click', finishBoilingImmediately);
     } else if (p === 'ready_to_pour') {
       bar.innerHTML = `
         <button class="pazu-btn btn-sky btn-big pulse-cta" id="primaryActionBtn">
-          💧 Pour ${state.kettleTarget}°C into Thermos!
+          ${d.btnPour(state.kettleTarget)}
         </button>
       `;
       document.getElementById('primaryActionBtn').addEventListener('click', () => startPouring(0, 0));
     } else if (p === 'pouring') {
       bar.innerHTML = `
         <div class="stage-status-pill">
-          🫖 Pouring into thermos flask...
+          ${d.pillPouring}
         </div>
       `;
     } else if (p === 'cooling') {
       bar.innerHTML = `
-        <button class="pazu-btn btn-mint" id="stageCompareBtn">📌 Pin &amp; New Run</button>
-        <button class="pazu-btn btn-cream" id="stageResetBtn">↻ Reset</button>
+        <button class="pazu-btn btn-mint" id="stageCompareBtn">${d.btnPinNew}</button>
+        <button class="pazu-btn btn-cream" id="stageResetBtn">${d.btnReset}</button>
       `;
       document.getElementById('stageCompareBtn').addEventListener('click', () => {
         AudioFX.pop(620);
@@ -322,10 +381,7 @@
     state.boilDuration = 1.6 + (tempRise / 80) * 1.6;
 
     AudioFX.startBoiling(() => state.boilProgress);
-    setNewtonMessage(
-      'boiling',
-      `Heating the kettle to <strong>${state.kettleTarget}°C</strong>! Watch the bubbles grow faster!`
-    );
+    setNewtonMessage('boiling', () => t().tipBoiling(state.kettleTarget));
     syncStepPills();
     syncActionBar();
   }
@@ -342,10 +398,7 @@
     state.kettleTemp = state.kettleTarget;
     state.phase = 'ready_to_pour';
 
-    setNewtonMessage(
-      'ready_pour',
-      `Ding! Water is <strong>${state.kettleTarget}°C</strong>! Drag the kettle or tap <strong>Pour!</strong>`
-    );
+    setNewtonMessage('ready_pour', () => t().tipReadyPour(state.kettleTarget));
     syncStepPills();
     syncActionBar();
   }
@@ -361,10 +414,7 @@
     state.pourFromY = fromY || 0;
     state.dragging = false;
 
-    setNewtonMessage(
-      'pouring',
-      `Pouring <strong>${state.kettleTarget}°C</strong> water into the <strong>${isolationProfile(state.isolation).name}</strong>!`
-    );
+    setNewtonMessage('pouring', () => t().tipPouring(state.kettleTarget, isolationProfile(state.isolation).name));
     syncStepPills();
     syncActionBar();
   }
@@ -400,20 +450,12 @@
 
     const delta = state.thermosTemp - state.roomTemp;
     if (delta > 5) {
-      setNewtonMessage(
-        'cooling_start',
-        `Huge gap (<strong>ΔT = ${delta.toFixed(0)}°C</strong>)! Notice how steeply the curve drops at first!`
-      );
+      const snapDelta = delta.toFixed(0);
+      setNewtonMessage('cooling_start', () => t().tipCoolingStart(snapDelta));
     } else if (delta < -5) {
-      setNewtonMessage(
-        'warming_start',
-        `Whoa! The room is warmer than the water, so Newton’s Law <strong>warms it up</strong> instead!`
-      );
+      setNewtonMessage('warming_start', () => t().tipWarmingStart);
     } else {
-      setNewtonMessage(
-        'balanced_start',
-        `Water &amp; room are almost the same temp — barely any heat flows!`
-      );
+      setNewtonMessage('balanced_start', () => t().tipBalancedStart);
     }
     checkMissions();
   }
@@ -470,20 +512,18 @@
     renderLegend();
     syncStepPills();
     syncActionBar();
-    setNewtonMessage(
-      'idle',
-      `Pick your temperatures &amp; isolation, then tap <strong>Boil!</strong>`
-    );
+    setNewtonMessage('idle', () => t().tipIdle);
   }
 
   function renderLegend() {
+    const d = t();
     const items = [
-      `<span class="legend-item"><span class="legend-swatch" style="background:#FF6B6B;"></span><span>Current Run</span></span>`,
-      `<span class="legend-item"><span class="legend-swatch" style="background:#339AF0;"></span><span>Room (${state.roomTemp}°C)</span></span>`,
+      `<span class="legend-item"><span class="legend-swatch" style="background:#FF6B6B;"></span><span>${d.legendCurrent}</span></span>`,
+      `<span class="legend-item"><span class="legend-swatch" style="background:#339AF0;"></span><span>${d.legendRoom(state.roomTemp)}</span></span>`,
     ];
     state.savedRuns.forEach((run, i) => {
       items.push(
-        `<span class="legend-item"><span class="legend-swatch" style="background:${run.color};"></span><span>Run ${i + 1}: ${run.label}</span></span>`
+        `<span class="legend-item"><span class="legend-swatch" style="background:${run.color};"></span><span>${d.legendRun(i + 1, run.label)}</span></span>`
       );
     });
     el.runLegend.innerHTML = items.join('');
@@ -497,11 +537,12 @@
   }
 
   function updateEquilibriumHorizonUi() {
+    const d = t();
     const horizon = getActiveMaxTimeMin();
     const label = formatDurationShort(horizon);
     el.eqHorizonPill.textContent = state.fixedMaxTimeMin !== null
-      ? `Equilibrium: ${label}`
-      : `Equilibrium ≈ ${label}`;
+      ? d.eqHorizonLocked(label)
+      : d.eqHorizonApprox(label);
   }
 
   function updateKettleThermometerUi() {
@@ -660,8 +701,8 @@
   function updateThermosVisuals() {
     const fillH = 92 * state.thermosFill;
     const fillY = 316 - fillH;
-    const t = state.thermosTemp !== null ? state.thermosTemp : state.kettleTarget;
-    const color = tempToColor(t);
+    const temp = state.thermosTemp !== null ? state.thermosTemp : state.kettleTarget;
+    const color = tempToColor(temp);
 
     el.thermosLiquid.setAttribute('y', fillY.toFixed(1));
     el.thermosLiquid.setAttribute('height', fillH.toFixed(1));
@@ -671,7 +712,8 @@
     el.thermosSurface.setAttribute('opacity', state.thermosFill > 0.05 ? '0.8' : '0');
 
     if (state.thermosTemp === null) {
-      el.thermosTempText.textContent = state.phase === 'pouring' ? 'Filling...' : 'Empty';
+      const d = t();
+      el.thermosTempText.textContent = state.phase === 'pouring' ? d.thermosFilling : d.thermosEmpty;
       el.thermosTempText.setAttribute('fill', '#7B6050');
       el.thermosIceLayer.setAttribute('opacity', '0');
       el.heatWavesGroup.setAttribute('opacity', '0');
@@ -749,37 +791,23 @@
 
     if (state.iceFraction > 0.01 && state.iceFraction < 0.99) {
       if (state.roomTemp < 0) {
-        setNewtonMessage(
-          'freezing_plateau',
-          `🧊 <strong>Freezing enthalpy!</strong> Water stays flat at <strong>0°C</strong> while releasing latent heat to turn into ice!`
-        );
+        setNewtonMessage('freezing_plateau', () => t().tipFreezingPlateau);
       } else if (state.roomTemp > 0) {
-        setNewtonMessage(
-          'melting_plateau',
-          `☀️ <strong>Melting enthalpy!</strong> Ice stays flat at <strong>0°C</strong> while absorbing heat to melt back into water!`
-        );
+        setNewtonMessage('melting_plateau', () => t().tipMeltingPlateau);
       }
       return;
     }
 
     if (state.iceFraction >= 1 && state.thermosTemp < -0.5 && Math.abs(delta) >= 1.2) {
-      setNewtonMessage(
-        'solid_ice',
-        `Frozen solid! Freezing enthalpy is gone — solid ice now cools <strong>2× faster</strong> toward <strong>${state.roomTemp}°C</strong>!`
-      );
+      setNewtonMessage('solid_ice', () => t().tipSolidIce(state.roomTemp));
       return;
     }
 
     if (Math.abs(delta) < 1.2 && state.elapsedMin > 5) {
-      setNewtonMessage(
-        'equilibrium',
-        `Equilibrium reached! ${state.iceFraction >= 1 ? 'Ice' : 'Water'} matched the room (<strong>${state.roomTemp}°C</strong>), so the curve flattened out!`
-      );
+      setNewtonMessage('equilibrium', () => t().tipEquilibrium(state.iceFraction >= 1, state.roomTemp));
     } else if (Math.abs(delta) < Math.abs(startT - state.roomTemp) * 0.45 && state.elapsedMin > 3) {
-      setNewtonMessage(
-        'slowing_down',
-        `Watch the curve bend flatter! Smaller gap (<strong>${Math.abs(delta).toFixed(1)}°C</strong>) means slower cooling!`
-      );
+      const snapGap = Math.abs(delta).toFixed(1);
+      setNewtonMessage('slowing_down', () => t().tipSlowingDown(snapGap));
     }
   }
 
@@ -944,7 +972,7 @@
 
       const statusPill = document.getElementById('boilStatusPill');
       if (statusPill) {
-        statusPill.textContent = `🫧 Heating... ${Math.round(state.kettleTemp)}°C / ${state.kettleTarget}°C`;
+        statusPill.textContent = t().pillHeating(Math.round(state.kettleTemp), state.kettleTarget);
       }
 
       if (state.boilProgress >= 1) {
@@ -1073,7 +1101,7 @@
       state.kettleTemp = Math.min(20, clamped - 5);
       syncStepPills();
       syncActionBar();
-      setNewtonMessage('retarget', `Target changed to <strong>${clamped}°C</strong>! Tap <strong>Boil!</strong>`);
+      setNewtonMessage('retarget', () => t().tipRetarget(clamped));
     }
     updateEquilibriumHorizonUi();
   }
@@ -1085,13 +1113,14 @@
     if (state.phase === 'cooling') {
       setNewtonMessage(
         'room_changed_' + (clamped < 0 ? 'subzero' : clamped <= 5 ? 'cold' : clamped >= 30 ? 'hot' : 'mid'),
-        clamped < 0
-          ? `Sub-zero <strong>${clamped}°C</strong> room! Water will freeze at <strong>0°C</strong> with a flat enthalpy plateau!`
-          : clamped <= 5
-            ? `Brrr! Cold <strong>${clamped}°C</strong> room widens ΔT — watch the curve plunge faster!`
-            : clamped >= 30
-              ? `Sunny <strong>${clamped}°C</strong> room raises the target asymptote!`
-              : `Room set to <strong>${clamped}°C</strong> — the water will now aim toward the new dashed blue line!`
+        () =>
+          clamped < 0
+            ? t().tipRoomSubzero(clamped)
+            : clamped <= 5
+              ? t().tipRoomCold(clamped)
+              : clamped >= 30
+                ? t().tipRoomHot(clamped)
+                : t().tipRoomMid(clamped)
       );
     }
   }
@@ -1102,13 +1131,17 @@
     updateIsolationVisuals();
     if (state.phase === 'cooling') {
       const prof = isolationProfile(clamped);
+      const snapK = state.k;
       setNewtonMessage(
         'iso_' + prof.skin,
-        clamped >= 80
-          ? `<strong>${prof.name}!</strong> Tiny <strong>k = ${state.k.toFixed(4)}</strong> traps heat for hours!`
-          : clamped <= 20
-            ? `<strong>${prof.name}!</strong> Large <strong>k = ${state.k.toFixed(3)}</strong> lets heat rush right out!`
-            : `Switched to <strong>${prof.name}</strong> (k = ${state.k.toFixed(3)} /min)!`
+        () => {
+          const curProf = isolationProfile(clamped);
+          return clamped >= 80
+            ? t().tipIsoHigh(curProf.name, snapK.toFixed(4))
+            : clamped <= 20
+              ? t().tipIsoLow(curProf.name, snapK.toFixed(3))
+              : t().tipIsoMid(curProf.name, snapK.toFixed(3));
+        }
       );
     }
   }
@@ -1192,21 +1225,32 @@
     el.saveCompareBtn.addEventListener('click', () => {
       AudioFX.pop(640);
       if (state.points.length < 2) {
-        setNewtonMessage('need_data_compare', 'Pour hot water and let it cool a bit first, then tap <strong>📌 Compare</strong>!');
+        setNewtonMessage('need_data_compare', () => t().tipNeedCompare);
         return;
       }
       if (state.currentRunSaved) {
-        setNewtonMessage('already_pinned', 'This curve is already pinned! Tap <strong>↻ New</strong> to test new settings side-by-side!');
+        setNewtonMessage('already_pinned', () => t().tipAlreadyPinned);
         return;
       }
       saveCurrentRunForCompare();
-      setNewtonMessage('pinned', 'Curve pinned! Tap <strong>↻ New</strong>, change isolation or room temp, and compare!');
+      setNewtonMessage('pinned', () => t().tipPinned);
     });
 
     el.clearRunsBtn.addEventListener('click', () => {
       AudioFX.pop(420);
       state.savedRuns = [];
       renderLegend();
+    });
+
+    // Language toggle (EN / NL Vlaams)
+    el.langToggle.querySelectorAll('.lang-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const nextLang = btn.dataset.lang;
+        if (nextLang === I18n.getLang()) return;
+        AudioFX.pop(580);
+        I18n.setLang(nextLang);
+        applyLanguage();
+      });
     });
 
     // Top bar actions
@@ -1253,10 +1297,8 @@
     setRoomTemp(20);
     setIsolation(45);
     setSpeed(60);
-    renderMissions();
-    renderLegend();
+    applyLanguage();
     syncStepPills();
-    syncActionBar();
     updatePlayPauseUi();
 
     global.requestAnimationFrame(tick);
