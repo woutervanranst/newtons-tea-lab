@@ -8,7 +8,13 @@
   'use strict';
 
   const AudioFX = global.NewtonAudio;
-  const { CoolingGraph, RUN_COLORS, formatDurationShort, calcEquilibriumTimeMin } = global.NewtonGraph;
+  const {
+    CoolingGraph,
+    RUN_COLORS,
+    stepThermalState,
+    formatDurationShort,
+    calcEquilibriumTimeMin,
+  } = global.NewtonGraph;
 
   const MISSIONS = [
     {
@@ -47,17 +53,18 @@
     return { name: 'Vacuum Shield', shortName: 'Vacuum', skin: 'skinVacuum' };
   }
 
-  // Smooth color interpolation for liquid & thermometer based on Celsius (-10..100)
+  // Smooth color interpolation for liquid & thermometer based on Celsius (-20..100)
   function tempToColor(tempC) {
     const stops = [
-      { t: -10, r: 86, g: 184, b: 255 },
+      { t: -20, r: 51,  g: 154, b: 240 },
+      { t: 0,   r: 102, g: 217, b: 232 },
       { t: 15,  r: 116, g: 192, b: 252 },
       { t: 38,  r: 105, g: 219, b: 175 },
       { t: 62,  r: 255, g: 192, b: 72 },
       { t: 82,  r: 255, g: 135, b: 67 },
       { t: 100, r: 255, g: 82,  b: 88 },
     ];
-    const clamped = Math.max(-10, Math.min(100, tempC));
+    const clamped = Math.max(-20, Math.min(100, tempC));
     for (let i = 0; i < stops.length - 1; i++) {
       const a = stops[i];
       const b = stops[i + 1];
@@ -104,6 +111,7 @@
     thermosTemp: null,
     thermosStartTemp: null,
     thermosFill: 0,
+    iceFraction: 0,
 
     elapsedMin: 0,
     timeSpeed: 60,
@@ -155,7 +163,7 @@
       'isoControl', 'isoTrackFill', 'isoKnob', 'isoBadge', 'isoName',
       'heaterGlow', 'baseLed', 'dragHint', 'pourStream', 'pourArcOuter',
       'heatWavesGroup', 'thermosSteam', 'skinBare', 'skinKnit', 'skinJacket', 'skinVacuum',
-      'thermosLiquid', 'thermosSurface', 'thermosMouth', 'thermosBlushL', 'thermosBlushR',
+      'thermosLiquid', 'thermosSurface', 'thermosIceLayer', 'thermosMouth', 'thermosBlushL', 'thermosBlushR',
       'thermosCap', 'thermosTempText',
       'kettleWrapper', 'kettleGroup', 'kettleSteam', 'kettleLiquid', 'kettleSurface',
       'kettleBubbles', 'kettleMouth', 'kettleBlushL', 'kettleBlushR', 'kettleTempText',
@@ -370,6 +378,7 @@
     state.thermosFill = 0.88;
     state.thermosTemp = state.kettleTarget;
     state.thermosStartTemp = state.kettleTarget;
+    state.iceFraction = 0;
     state.elapsedMin = 0;
     state.paused = false;
     state.currentRunSaved = false;
@@ -380,6 +389,7 @@
         t: 0,
         T: state.thermosTemp,
         roomTemp: state.roomTemp,
+        iceFraction: 0,
       },
     ];
 
@@ -437,6 +447,7 @@
     state.thermosTemp = null;
     state.thermosStartTemp = null;
     state.thermosFill = 0;
+    state.iceFraction = 0;
     state.elapsedMin = 0;
     state.points = [];
     state.currentRunSaved = false;
@@ -498,10 +509,10 @@
     el.kettleTargetBadge.textContent = `${t}°C`;
     el.kettleThermoControl.setAttribute('aria-valuenow', String(t));
 
-    // Vertical thermometer track inside #kettleThermoControl: y = 40 (100°C) .. 120 (25°C)
+    // Tall vertical thermometer track inside #kettleThermoControl: y = 46 (100°C) .. 222 (25°C)
     const ratio = Math.max(0, Math.min(1, (t - 25) / 75));
-    const knobY = 120 - ratio * 80;
-    const fillH = 126 - knobY;
+    const knobY = 222 - ratio * 176;
+    const fillH = 230 - knobY;
     const color = tempToColor(t);
 
     el.kettleThermoFill.setAttribute('y', knobY.toFixed(1));
@@ -517,15 +528,15 @@
     el.roomThermoControl.setAttribute('aria-valuenow', String(rt));
 
     // Weather icon
-    if (rt <= 5) el.roomWeatherIcon.textContent = '❄️';
+    if (rt <= 0) el.roomWeatherIcon.textContent = '❄️';
     else if (rt <= 14) el.roomWeatherIcon.textContent = '🌬️';
     else if (rt <= 26) el.roomWeatherIcon.textContent = '🌤️';
     else el.roomWeatherIcon.textContent = '☀️';
 
-    // Interactive room thermometer fill & knob (-10..40 -> knobY 120..40)
-    const ratio = Math.max(0, Math.min(1, (rt + 10) / 50));
-    const knobY = 120 - ratio * 80;
-    const fillH = 126 - knobY;
+    // Tall interactive room thermometer fill & knob (-20..40 -> knobY 222..46)
+    const ratio = Math.max(0, Math.min(1, (rt + 20) / 60));
+    const knobY = 222 - ratio * 176;
+    const fillH = 230 - knobY;
     const thermoColor = tempToColor(rt);
     el.roomThermoFill.setAttribute('y', knobY.toFixed(1));
     el.roomThermoFill.setAttribute('height', fillH.toFixed(1));
@@ -574,10 +585,10 @@
     el.isoName.textContent = prof.shortName;
     el.isoControl.setAttribute('aria-valuenow', String(state.isolation));
 
-    // Interactive isolation track inside #isoControl: y = 44 (100%) .. 126 (0%)
+    // Tall interactive isolation track inside #isoControl: y = 48 (100%) .. 232 (0%)
     const ratio = Math.max(0, Math.min(1, state.isolation / 100));
-    const knobY = 126 - ratio * 82;
-    const fillH = 132 - knobY;
+    const knobY = 232 - ratio * 184;
+    const fillH = 238 - knobY;
     el.isoTrackFill.setAttribute('y', knobY.toFixed(1));
     el.isoTrackFill.setAttribute('height', fillH.toFixed(1));
     el.isoKnob.setAttribute('transform', `translate(44, ${knobY.toFixed(1)})`);
@@ -662,6 +673,7 @@
     if (state.thermosTemp === null) {
       el.thermosTempText.textContent = state.phase === 'pouring' ? 'Filling...' : 'Empty';
       el.thermosTempText.setAttribute('fill', '#7B6050');
+      el.thermosIceLayer.setAttribute('opacity', '0');
       el.heatWavesGroup.setAttribute('opacity', '0');
       el.thermosSteam.setAttribute('opacity', state.phase === 'pouring' && state.kettleTarget > 55 ? '0.75' : '0');
       el.thermosMouth.setAttribute('d', 'M-4 6 Q0 8 4 6');
@@ -670,10 +682,16 @@
       return;
     }
 
-    el.thermosTempText.textContent = `${state.thermosTemp.toFixed(1)}°C`;
+    // Frosted ice crystal overlay scales smoothly with iceFraction (0..1)
+    el.thermosIceLayer.setAttribute('opacity', (state.iceFraction * 0.92).toFixed(2));
+
+    el.thermosTempText.textContent =
+      state.iceFraction > 0
+        ? `🧊 ${state.thermosTemp.toFixed(1)}°C`
+        : `${state.thermosTemp.toFixed(1)}°C`;
     el.thermosTempText.setAttribute('fill', state.thermosTemp >= 55 ? '#C92A2A' : '#1864AB');
 
-    // Instantaneous cooling rate |dT/dt| in °C/min
+    // Instantaneous heat flow rate (still nonzero during 0°C freezing plateau because ΔT = 0 - T_room!)
     const delta = state.thermosTemp - state.roomTemp;
     const absRate = Math.abs(-state.k * delta);
 
@@ -729,10 +747,33 @@
     const startT = state.thermosStartTemp !== null ? state.thermosStartTemp : state.kettleTarget;
     const delta = state.thermosTemp - state.roomTemp;
 
+    if (state.iceFraction > 0.01 && state.iceFraction < 0.99) {
+      if (state.roomTemp < 0) {
+        setNewtonMessage(
+          'freezing_plateau',
+          `🧊 <strong>Freezing enthalpy!</strong> Water stays flat at <strong>0°C</strong> while releasing latent heat to turn into ice!`
+        );
+      } else if (state.roomTemp > 0) {
+        setNewtonMessage(
+          'melting_plateau',
+          `☀️ <strong>Melting enthalpy!</strong> Ice stays flat at <strong>0°C</strong> while absorbing heat to melt back into water!`
+        );
+      }
+      return;
+    }
+
+    if (state.iceFraction >= 1 && state.thermosTemp < -0.5 && Math.abs(delta) >= 1.2) {
+      setNewtonMessage(
+        'solid_ice',
+        `Frozen solid! Freezing enthalpy is gone — solid ice now cools <strong>2× faster</strong> toward <strong>${state.roomTemp}°C</strong>!`
+      );
+      return;
+    }
+
     if (Math.abs(delta) < 1.2 && state.elapsedMin > 5) {
       setNewtonMessage(
         'equilibrium',
-        `Equilibrium reached! Water matched the room (<strong>${state.roomTemp}°C</strong>), so the curve flattened out!`
+        `Equilibrium reached! ${state.iceFraction >= 1 ? 'Ice' : 'Water'} matched the room (<strong>${state.roomTemp}°C</strong>), so the curve flattened out!`
       );
     } else if (Math.abs(delta) < Math.abs(startT - state.roomTemp) * 0.45 && state.elapsedMin > 3) {
       setNewtonMessage(
@@ -756,6 +797,7 @@
       roomTemp: state.roomTemp,
       kettleTarget: state.kettleTarget,
       k: state.k,
+      iceFraction: state.iceFraction,
       elapsedMin: state.elapsedMin,
       maxTimeMin: getActiveMaxTimeMin(),
       showTheory: state.showTheory,
@@ -955,18 +997,26 @@
     } else if (state.phase === 'cooling' && !state.paused) {
       const simDtMin = (realDt * state.timeSpeed) / 60;
       if (simDtMin > 0) {
-        // Exact analytical exponential integration for Newton's Law of Cooling
-        const decay = Math.exp(-state.k * simDtMin);
-        state.thermosTemp = state.roomTemp + (state.thermosTemp - state.roomTemp) * decay;
+        // Exact analytical Newton's Law + 0°C Enthalpy of Fusion phase-change integration
+        const prevIce = state.iceFraction;
+        const next = stepThermalState(state.thermosTemp, state.iceFraction, state.roomTemp, state.k, simDtMin);
+        state.thermosTemp = next.T;
+        state.iceFraction = next.iceFraction;
         state.elapsedMin += simDtMin;
 
         // Sample cleanly across the fixed equilibrium time axis without resizing it
         const horizon = state.fixedMaxTimeMin || 60;
         const lastPt = state.points[state.points.length - 1];
         const minGap = Math.max(0.05, horizon / 220);
+        const phaseBoundaryCrossed =
+          (prevIce === 0 && state.iceFraction > 0) ||
+          (prevIce < 1 && state.iceFraction >= 1) ||
+          (prevIce === 1 && state.iceFraction < 1) ||
+          (prevIce > 0 && state.iceFraction <= 0);
         if (state.elapsedMin <= horizon) {
           if (
             !lastPt ||
+            phaseBoundaryCrossed ||
             state.elapsedMin - lastPt.t >= minGap ||
             Math.abs(state.thermosTemp - lastPt.T) >= 0.45
           ) {
@@ -974,6 +1024,7 @@
               t: state.elapsedMin,
               T: state.thermosTemp,
               roomTemp: state.roomTemp,
+              iceFraction: state.iceFraction,
             });
           }
         } else if (lastPt && lastPt.t < horizon) {
@@ -982,6 +1033,7 @@
             t: horizon,
             T: state.thermosTemp,
             roomTemp: state.roomTemp,
+            iceFraction: state.iceFraction,
           });
         }
         checkMissions();
@@ -1027,17 +1079,19 @@
   }
 
   function setRoomTemp(val) {
-    const clamped = Math.max(-10, Math.min(40, Math.round(val)));
+    const clamped = Math.max(-20, Math.min(40, Math.round(val)));
     state.roomTemp = clamped;
     updateRoomAtmosphere();
     if (state.phase === 'cooling') {
       setNewtonMessage(
-        'room_changed_' + (clamped <= 5 ? 'cold' : clamped >= 30 ? 'hot' : 'mid'),
-        clamped <= 5
-          ? `Brrr! Freezing <strong>${clamped}°C</strong> room widens ΔT — watch the curve plunge faster!`
-          : clamped >= 30
-            ? `Sunny <strong>${clamped}°C</strong> room raises the target asymptote!`
-            : `Room set to <strong>${clamped}°C</strong> — the water will now aim toward the new dashed blue line!`
+        'room_changed_' + (clamped < 0 ? 'subzero' : clamped <= 5 ? 'cold' : clamped >= 30 ? 'hot' : 'mid'),
+        clamped < 0
+          ? `Sub-zero <strong>${clamped}°C</strong> room! Water will freeze at <strong>0°C</strong> with a flat enthalpy plateau!`
+          : clamped <= 5
+            ? `Brrr! Cold <strong>${clamped}°C</strong> room widens ΔT — watch the curve plunge faster!`
+            : clamped >= 30
+              ? `Sunny <strong>${clamped}°C</strong> room raises the target asymptote!`
+              : `Room set to <strong>${clamped}°C</strong> — the water will now aim toward the new dashed blue line!`
       );
     }
   }
@@ -1083,11 +1137,11 @@
   }
 
   function bindEvents() {
-    // Interactive in-scene SVG sliders (kettle temp, room temp, isolation)
+    // Tall interactive in-scene SVG sliders (kettle temp, room temp, isolation)
     bindVerticalSvgSlider(el.kettleThermoControl, {
-      originY: 134,
-      topY: 40,
-      bottomY: 120,
+      originY: 26,
+      topY: 46,
+      bottomY: 222,
       min: 25,
       max: 100,
       step: 1,
@@ -1097,10 +1151,10 @@
     });
 
     bindVerticalSvgSlider(el.roomThermoControl, {
-      originY: 134,
-      topY: 40,
-      bottomY: 120,
-      min: -10,
+      originY: 26,
+      topY: 46,
+      bottomY: 222,
+      min: -20,
       max: 40,
       step: 1,
       bigStep: 5,
@@ -1109,9 +1163,9 @@
     });
 
     bindVerticalSvgSlider(el.isoControl, {
-      originY: 134,
-      topY: 44,
-      bottomY: 126,
+      originY: 26,
+      topY: 48,
+      bottomY: 232,
       min: 0,
       max: 100,
       step: 1,

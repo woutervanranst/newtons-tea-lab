@@ -5,6 +5,90 @@
 
   const RUN_COLORS = ['#7C6CF6', '#22B8CF', '#F59F00', '#E64980'];
 
+  // Water phase-change thermodynamics:
+  // Enthalpy of fusion L_f = 334 kJ/kg, c_water = 4.186 kJ/(kg·K) -> L_f / c_water ≈ 79.8°C
+  // Specific heat of ice c_ice ≈ 2.09 kJ/(kg·K) ≈ 0.5 * c_water -> ice cools ~2x faster (k_ice = 2*k)
+  const FREEZE_TEMP = 0;
+  const LATENT_EQ_C = 79.8;
+  const ICE_K_MULT = 2.0;
+
+  /* Exact analytical step combining Newton's Law of Cooling + 0°C Enthalpy of Fusion plateau.
+     Handles liquid cooling/warming, freezing plateau (0 -> 1 iceFraction),
+     ice cooling/warming (2x faster), and reverse melting plateau (1 -> 0 iceFraction). */
+  function stepThermalState(startT, startIce, roomTemp, k, dtMin) {
+    let T = startT;
+    let ice = Math.max(0, Math.min(1, startIce || 0));
+    let rem = Math.max(0, dtMin);
+    const safeK = Math.max(1e-6, k);
+
+    for (let iter = 0; iter < 5 && rem > 1e-9; iter++) {
+      // 1. Liquid water regime (T > 0, or T == 0 warming/steady with no ice)
+      if (ice <= 0 && (T > FREEZE_TEMP || (T === FREEZE_TEMP && roomTemp >= FREEZE_TEMP))) {
+        ice = 0;
+        if (roomTemp < FREEZE_TEMP && T > FREEZE_TEMP) {
+          const tHitZero = Math.log((T - roomTemp) / (FREEZE_TEMP - roomTemp)) / safeK;
+          if (rem < tHitZero) {
+            T = roomTemp + (T - roomTemp) * Math.exp(-safeK * rem);
+            rem = 0;
+          } else {
+            T = FREEZE_TEMP;
+            rem -= tHitZero;
+          }
+        } else {
+          T = roomTemp + (T - roomTemp) * Math.exp(-safeK * rem);
+          rem = 0;
+        }
+      }
+      // 2. Solid ice regime (T < 0, or T == 0 cooling/steady when 100% ice)
+      else if (ice >= 1 && (T < FREEZE_TEMP || (T === FREEZE_TEMP && roomTemp <= FREEZE_TEMP))) {
+        ice = 1;
+        const kIce = safeK * ICE_K_MULT;
+        if (roomTemp > FREEZE_TEMP && T < FREEZE_TEMP) {
+          const tHitZero = Math.log((roomTemp - T) / (roomTemp - FREEZE_TEMP)) / kIce;
+          if (rem < tHitZero) {
+            T = roomTemp + (T - roomTemp) * Math.exp(-kIce * rem);
+            rem = 0;
+          } else {
+            T = FREEZE_TEMP;
+            rem -= tHitZero;
+          }
+        } else {
+          T = roomTemp + (T - roomTemp) * Math.exp(-kIce * rem);
+          rem = 0;
+        }
+      }
+      // 3. Phase-change plateau at 0°C (enthalpy of fusion: freezing or melting)
+      else {
+        T = FREEZE_TEMP;
+        if (roomTemp < FREEZE_TEMP && ice < 1) {
+          const dfPerMin = (safeK * (FREEZE_TEMP - roomTemp)) / LATENT_EQ_C;
+          const tFinish = (1 - ice) / dfPerMin;
+          if (rem < tFinish) {
+            ice = Math.min(1, ice + dfPerMin * rem);
+            rem = 0;
+          } else {
+            ice = 1;
+            rem -= tFinish;
+          }
+        } else if (roomTemp > FREEZE_TEMP && ice > 0) {
+          const dfPerMin = (safeK * (roomTemp - FREEZE_TEMP)) / LATENT_EQ_C;
+          const tFinish = ice / dfPerMin;
+          if (rem < tFinish) {
+            ice = Math.max(0, ice - dfPerMin * rem);
+            rem = 0;
+          } else {
+            ice = 0;
+            rem -= tFinish;
+          }
+        } else {
+          rem = 0;
+        }
+      }
+    }
+
+    return { T, iceFraction: ice };
+  }
+
   function formatDurationShort(minutes) {
     if (minutes < 1) {
       return Math.round(minutes * 60) + 's';
@@ -34,11 +118,21 @@
     return Math.ceil(safe / 360) * 360;                    // 30h, 36h, 42h...
   }
 
-  /* Calculate time until practical thermal equilibrium (|T - T_room| <= 0.5°C) */
+  /* Calculate time until practical thermal equilibrium (|T - T_room| <= 0.5°C),
+     including the 0°C freezing enthalpy plateau and faster ice cooling when T_room < 0°C */
   function calcEquilibriumTimeMin(startTemp, roomTemp, k) {
-    const delta = Math.abs(startTemp - roomTemp);
     const eps = 0.5;
     const safeK = Math.max(0.001, k);
+
+    if (startTemp > FREEZE_TEMP && roomTemp < FREEZE_TEMP) {
+      const tLiquid = Math.log((startTemp - roomTemp) / (FREEZE_TEMP - roomTemp)) / safeK;
+      const tFreeze = LATENT_EQ_C / (safeK * (FREEZE_TEMP - roomTemp));
+      const iceGap = Math.abs(roomTemp - FREEZE_TEMP);
+      const tIce = iceGap > eps ? Math.log(iceGap / eps) / (safeK * ICE_K_MULT) : 0;
+      return pickNiceEquilibriumAxis(tLiquid + tFreeze + tIce);
+    }
+
+    const delta = Math.abs(startTemp - roomTemp);
     const rawMin = delta > eps * 2
       ? Math.log(delta / eps) / safeK
       : 4.5 / safeK;
@@ -137,14 +231,16 @@
       this._roundRect(ctx, pad.left, pad.top, plotW, plotH, 16);
       ctx.fill();
 
-      // Compute Y range stably (-10..105 when cold room, else 0..105)
-      let minTemp = Math.min(0, state.roomTemp - 5);
+      // Compute Y range stably (down to -25°C when sub-zero room, else 0..105)
+      let minTemp = state.roomTemp < 0 ? Math.min(-24, state.roomTemp - 4) : 0;
       if (state.savedRuns) {
         state.savedRuns.forEach((run) => {
-          minTemp = Math.min(minTemp, run.roomTemp - 5);
+          if (run.roomTemp < 0) minTemp = Math.min(minTemp, run.roomTemp - 4);
         });
       }
-      minTemp = Math.floor(minTemp / 10) * 10;
+      if (minTemp < 0) {
+        minTemp = Math.min(-24, Math.floor(minTemp / 5) * 5);
+      }
       const maxTemp = 105;
 
       // Fixed equilibrium-based X axis (locked as of pouring — never resizes)
@@ -243,22 +339,49 @@
       ctx.fillText(roomLabel, tagX + tagW / 2, tagY + tagH / 2 + 0.5);
       ctx.restore();
 
-      // Subtle dashed expected Newton curve preview
+      // Highlight 0°C freezing line when sub-zero temperatures are shown
+      if (minTemp < 0) {
+        const freezeY = yOf(FREEZE_TEMP);
+        ctx.save();
+        ctx.strokeStyle = 'rgba(21, 170, 191, 0.55)';
+        ctx.lineWidth = 1.8;
+        ctx.setLineDash([4, 5]);
+        ctx.beginPath();
+        ctx.moveTo(pad.left, freezeY);
+        ctx.lineTo(pad.left + plotW, freezeY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.font = '700 11px "Fredoka", "Nunito", ui-rounded, sans-serif';
+        ctx.fillStyle = '#0C8599';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText('❄️ 0°C Freezing Point', pad.left + 10, freezeY - 4);
+        ctx.restore();
+      }
+
+      // Subtle dashed expected Newton + freezing enthalpy curve preview
       if (state.showTheory) {
         const T0 = state.phase === 'cooling' && state.points.length ? state.points[0].T : state.kettleTarget;
         const Tr = state.roomTemp;
         const k = state.k;
         ctx.save();
-        ctx.strokeStyle = 'rgba(255, 135, 67, 0.36)';
+        ctx.strokeStyle = 'rgba(255, 135, 67, 0.42)';
         ctx.lineWidth = 2.2;
         ctx.setLineDash([5, 6]);
         ctx.beginPath();
-        const samples = 100;
+        const samples = 140;
+        const stepDt = maxTimeMin / samples;
+        let simT = T0;
+        let simIce = 0;
         for (let i = 0; i <= samples; i++) {
-          const t = (maxTimeMin * i) / samples;
-          const T = Tr + (T0 - Tr) * Math.exp(-k * t);
+          const t = stepDt * i;
+          if (i > 0) {
+            const next = stepThermalState(simT, simIce, Tr, k, stepDt);
+            simT = next.T;
+            simIce = next.iceFraction;
+          }
           const x = xOf(t);
-          const y = yOf(T);
+          const y = yOf(simT);
           if (i === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
@@ -358,7 +481,13 @@
         ctx.fill();
 
         if (this.hoverX === null) {
-          const liveLabel = last.T.toFixed(1) + '°C';
+          const icePct = Math.round((state.iceFraction || last.iceFraction || 0) * 100);
+          const liveLabel =
+            icePct > 0 && icePct < 100
+              ? `🧊 0.0°C (${icePct}% ice)`
+              : icePct >= 100
+                ? `🧊 ${last.T.toFixed(1)}°C`
+                : `${last.T.toFixed(1)}°C`;
           ctx.font = '700 12.5px "Fredoka", "Nunito", ui-rounded, sans-serif';
           const lw = ctx.measureText(liveLabel).width + 16;
           const lh = 24;
@@ -367,13 +496,13 @@
           let by = ly - lh / 2;
           by = Math.max(pad.top + 8, Math.min(pad.top + plotH - lh - 8, by));
 
-          ctx.fillStyle = '#FFFDF7';
+          ctx.fillStyle = icePct > 0 ? '#E7F5FF' : '#FFFDF7';
           ctx.strokeStyle = '#4A3528';
           ctx.lineWidth = 2.2;
           this._roundRect(ctx, bx, by, lw, lh, 12);
           ctx.fill();
           ctx.stroke();
-          ctx.fillStyle = '#C92A2A';
+          ctx.fillStyle = icePct > 0 ? '#1864AB' : '#C92A2A';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(liveLabel, bx + lw / 2, by + lh / 2 + 0.5);
@@ -433,7 +562,9 @@
         ctx.fill();
         ctx.stroke();
 
-        const line1 = formatDurationShort(closest.t) + '  •  ' + closest.T.toFixed(1) + '°C';
+        const ptIce = Math.round((closest.iceFraction || 0) * 100);
+        const phaseTag = ptIce > 0 && ptIce < 100 ? `  •  🧊 ${ptIce}%` : ptIce >= 100 ? '  •  🧊 Ice' : '';
+        const line1 = formatDurationShort(closest.t) + '  •  ' + closest.T.toFixed(1) + '°C' + phaseTag;
         ctx.font = '700 12.5px "Fredoka", "Nunito", ui-rounded, sans-serif';
         const boxW = ctx.measureText(line1).width + 22;
         const boxH = 30;
@@ -479,6 +610,10 @@
   global.NewtonGraph = {
     CoolingGraph,
     RUN_COLORS,
+    FREEZE_TEMP,
+    LATENT_EQ_C,
+    ICE_K_MULT,
+    stepThermalState,
     formatDurationShort,
     calcEquilibriumTimeMin,
   };
