@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Newton's Tea Lab — Law of Cooling Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- ========== TOP BAR ========== -->
+    <header class="top-bar">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+            <path d="M16 7C16 4.5 18.2 3 20.5 3" stroke="#4A3528" stroke-width="2.8" stroke-linecap="round"/>
+            <path d="M16 7C14 5.5 11.5 5 10.5 6.5C12.5 8 14.5 8.2 16 7Z" fill="#4CD3A9" stroke="#4A3528" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M16 9.5C11.2 9.5 7 13 7 18.6C7 24.4 11 28.5 14.2 28.5C15.1 28.5 15.6 28 16 28C16.4 28 16.9 28.5 17.8 28.5C21 28.5 25 24.4 25 18.6C25 13 20.8 9.5 16 9.5Z" fill="#FF6B6B" stroke="#4A3528" stroke-width="2.6"/>
+            <ellipse cx="12.2" cy="15.2" rx="2.1" ry="3.2" transform="rotate(-22 12.2 15.2)" fill="#FFA8A8"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">Newton’s Tea Lab</h1>
+          <span class="brand-sub">Newton’s Law of Cooling</span>
+        </div>
+      </div>
+
+      <nav class="step-pills" aria-label="Experiment steps">
+        <div class="step-pill active" id="stepBoil">
+          <span class="step-num">1</span>
+          <span>Boil</span>
+        </div>
+        <div class="step-pill" id="stepPour">
+          <span class="step-num">2</span>
+          <span>Pour</span>
+        </div>
+        <div class="step-pill" id="stepCool">
+          <span class="step-num">3</span>
+          <span>Cool &amp; Graph</span>
+        </div>
+      </nav>
+
+      <div class="top-actions">
+        <button class="pazu-btn btn-yellow" id="missionsBtn" title="Discovery Missions">
+          <span>★</span>
+          <span id="missionsCount">0/4</span>
+        </button>
+        <button class="pazu-btn btn-cream icon-only" id="guideBtn" title="How Newton's Law Works" aria-label="How Newton's Law Works">?</button>
+        <button class="pazu-btn btn-cream icon-only" id="soundBtn" title="Toggle Sound" aria-label="Toggle Sound">🔊</button>
+        <button class="pazu-btn btn-lavender" id="newRunBtn" title="Start a New Experiment">↻ New</button>
+      </div>
+    </header>
+
+    <!-- ========== MAIN WORKSPACE ========== -->
+    <main class="workspace">
+      <!-- LEFT COLUMN: INTERACTIVE PAZU KITCHEN + CONTROLS -->
+      <section class="left-col">
+        <div class="stage-card">
+          <!-- Cute Chibi Sir Isaac Newton Speech Bubble -->
+          <div class="newton-bubble" id="newtonBubble">
+            <div class="newton-avatar" aria-hidden="true">
+              <svg width="36" height="36" viewBox="0 0 44 44" fill="none">
+                <!-- Curly white wig -->
+                <circle cx="11" cy="22" r="7" fill="#F8F5F0" stroke="#4A3528" stroke-width="2.2"/>
+                <circle cx="33" cy="22" r="7" fill="#F8F5F0" stroke="#4A3528" stroke-width="2.2"/>
+                <circle cx="13" cy="14" r="6.5" fill="#FFFFFF" stroke="#4A3528" stroke-width="2.2"/>
+                <circle cx="31" cy="14" r="6.5" fill="#FFFFFF" stroke="#4A3528" stroke-width="2.2"/>
+                <circle cx="22" cy="12" r="7" fill="#FFFFFF" stroke="#4A3528" stroke-width="2.2"/>
+                <!-- Face -->
+                <circle cx="22" cy="24" r="10.5" fill="#FFE0C2" stroke="#4A3528" stroke-width="2.2"/>
+                <!-- Cute eyes & blush -->
+                <circle cx="18.3" cy="23" r="1.7" fill="#4A3528"/>
+                <circle cx="25.7" cy="23" r="1.7" fill="#4A3528"/>
+                <circle cx="18.8" cy="22.4" r="0.6" fill="#FFFFFF"/>
+                <circle cx="26.2" cy="22.4" r="0.6" fill="#FFFFFF"/>
+                <ellipse cx="15.5" cy="26" rx="2.1" ry="1.2" fill="#FF9E9E"/>
+                <ellipse cx="28.5" cy="26" rx="2.1" ry="1.2" fill="#FF9E9E"/>
+                <path d="M19.5 27.5Q22 29.8 24.5 27.5" stroke="#4A3528" stroke-width="2" stroke-linecap="round"/>
+                <!-- Tiny apple on head -->
+                <circle cx="22" cy="6.5" r="3.4" fill="#FF6B6B" stroke="#4A3528" stroke-width="1.6"/>
+                <path d="M22 3.1V1.6" stroke="#4A3528" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="newton-text" id="newtonText">
+              Pick a water temp and tap <strong>Boil!</strong> Let’s test how heat escapes!
+            </div>
+          </div>
+
+          <!-- FULL PAZU VECTOR KITCHEN SCENE -->
+          <div class="stage-svg-wrap">
+            <svg id="kitchenSvg" viewBox="0 0 760 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Interactive Pazu kitchen with kettle, thermos flask, window, and thermometers">
+              <defs>
+                <!-- Dynamic Wall Gradient -->
+                <linearGradient id="wallGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop id="wallStopTop" offset="0%" stop-color="#FFF4DC"/>
+                  <stop id="wallStopBot" offset="100%" stop-color="#FFE7C7"/>
+                </linearGradient>
+                <!-- Dynamic Sky Gradient -->
+                <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop id="skyStopTop" offset="0%" stop-color="#87D4FF"/>
+                  <stop id="skyStopBot" offset="100%" stop-color="#DDF4FF"/>
+                </linearGradient>
+                <!-- Wood Countertop -->
+                <linearGradient id="counterGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#F7C78C"/>
+                  <stop offset="100%" stop-color="#E5A964"/>
+                </linearGradient>
+                <linearGradient id="counterFrontGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#D89452"/>
+                  <stop offset="100%" stop-color="#C07C3E"/>
+                </linearGradient>
+                <!-- Kettle Water Clip -->
+                <clipPath id="kettleWindowClip">
+                  <rect x="163" y="218" width="84" height="74" rx="18"/>
+                </clipPath>
+                <!-- Thermos Water Clip -->
+                <clipPath id="thermosWindowClip">
+                  <rect x="502" y="206" width="66" height="96" rx="18"/>
+                </clipPath>
+                <!-- Window Interior Clip -->
+                <clipPath id="windowClip">
+                  <rect x="242" y="34" width="236" height="156" rx="18"/>
+                </clipPath>
+                <!-- Vacuum Shield Shimmer -->
+                <linearGradient id="vacuumGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#D5B8FF"/>
+                  <stop offset="50%" stop-color="#FFE680"/>
+                  <stop offset="100%" stop-color="#9BE7FF"/>
+                </linearGradient>
+                <!-- Kettle Heat Glow -->
+                <radialGradient id="heaterGlowGrad" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#FF5A5F" stop-opacity="0.85"/>
+                  <stop offset="65%" stop-color="#FFA94D" stop-opacity="0.35"/>
+                  <stop offset="100%" stop-color="#FFA94D" stop-opacity="0"/>
+                </radialGradient>
+              </defs>
+
+              <!-- ===== WALLPAPER & BACKSPLASH ===== -->
+              <rect x="0" y="0" width="760" height="320" fill="url(#wallGrad)"/>
+              <!-- Subtle vertical pastel stripes -->
+              <g opacity="0.22" fill="#FFFFFF">
+                <rect x="40" y="0" width="26" height="270"/>
+                <rect x="120" y="0" width="26" height="270"/>
+                <rect x="560" y="0" width="26" height="270"/>
+                <rect x="640" y="0" width="26" height="270"/>
+                <rect x="720" y="0" width="26" height="270"/>
+              </g>
+              <!-- Kitchen Tile Backsplash -->
+              <rect x="0" y="250" width="760" height="72" fill="#FFFDF8" stroke="#4A3528" stroke-width="2.5"/>
+              <g stroke="#EDE0CE" stroke-width="2">
+                <line x1="0" y1="286" x2="760" y2="286"/>
+                <line x1="76" y1="250" x2="76" y2="322"/>
+                <line x1="152" y1="250" x2="152" y2="322"/>
+                <line x1="228" y1="250" x2="228" y2="322"/>
+                <line x1="304" y1="250" x2="304" y2="322"/>
+                <line x1="380" y1="250" x2="380" y2="322"/>
+                <line x1="456" y1="250" x2="456" y2="322"/>
+                <line x1="532" y1="250" x2="532" y2="322"/>
+                <line x1="608" y1="250" x2="608" y2="322"/>
+                <line x1="684" y1="250" x2="684" y2="322"/>
+              </g>
+
+              <!-- ===== KITCHEN WINDOW (REFLECTS ROOM TEMP) ===== -->
+              <g id="kitchenWindow">
+                <!-- Outer frame -->
+                <rect x="232" y="24" width="256" height="176" rx="24" fill="#FFFDF7" stroke="#4A3528" stroke-width="3.5"/>
+                <!-- Sky interior -->
+                <g clip-path="url(#windowClip)">
+                  <rect x="242" y="34" width="236" height="156" fill="url(#skyGrad)"/>
+
+                  <!-- Rolling hills outside -->
+                  <ellipse id="hillBack" cx="315" cy="196" rx="120" ry="44" fill="#9CE5B4"/>
+                  <ellipse id="hillFront" cx="430" cy="202" rx="120" ry="40" fill="#6FD497"/>
+
+                  <!-- Sun (visible in warm / hot room temp) -->
+                  <g id="windowSun" transform="translate(425, 72)">
+                    <g class="sun-rays" stroke="#FFD43B" stroke-width="4" stroke-linecap="round">
+                      <line x1="0" y1="-28" x2="0" y2="-21"/>
+                      <line x1="0" y1="21" x2="0" y2="28"/>
+                      <line x1="-28" y1="0" x2="-21" y2="0"/>
+                      <line x1="21" y1="0" x2="28" y2="0"/>
+                      <line x1="-20" y1="-20" x2="-15" y2="-15"/>
+                      <line x1="15" y1="15" x2="20" y2="20"/>
+                      <line x1="-20" y1="20" x2="-15" y2="15"/>
+                      <line x1="15" y1="-15" x2="20" y2="-20"/>
+                    </g>
+                    <circle cx="0" cy="0" r="16" fill="#FFE066" stroke="#4A3528" stroke-width="2.4"/>
+                    <circle cx="-4.5" cy="-1.5" r="1.6" fill="#4A3528"/>
+                    <circle cx="4.5" cy="-1.5" r="1.6" fill="#4A3528"/>
+                    <path d="M-3.5 3.5Q0 6.5 3.5 3.5" stroke="#4A3528" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                  </g>
+
+                  <!-- Fluffy Clouds -->
+                  <g id="windowClouds" fill="#FFFFFF" opacity="0.92">
+                    <path d="M268 88C268 80 275 74 283 75C286 67 298 65 305 72C313 71 320 77 320 85C320 91 315 95 309 95H276C271 95 268 92 268 88Z"/>
+                    <path d="M342 66C342 61 347 57 352 58C354 53 362 52 367 56C372 56 377 60 377 65C377 69 374 71 370 71H348C344 71 342 69 342 66Z" opacity="0.82"/>
+                  </g>
+
+                  <!-- Snowflakes + Frost (visible when Room Temp <= 10°C) -->
+                  <g id="windowSnow" opacity="0">
+                    <circle class="snow-flake" cx="275" cy="40" r="4" fill="#FFFFFF"/>
+                    <circle class="snow-flake s2" cx="328" cy="36" r="3.5" fill="#FFFFFF"/>
+                    <circle class="snow-flake s3" cx="385" cy="42" r="4.5" fill="#FFFFFF"/>
+                    <circle class="snow-flake s4" cx="440" cy="38" r="3.5" fill="#FFFFFF"/>
+                    <circle class="snow-flake s2" cx="300" cy="52" r="2.8" fill="#E7F5FF"/>
+                    <circle class="snow-flake s3" cx="412" cy="50" r="3" fill="#E7F5FF"/>
+                    <!-- Frosty corners -->
+                    <path d="M242 34L286 34Q260 44 242 74Z" fill="#FFFFFF" opacity="0.55"/>
+                    <path d="M478 34L434 34Q460 44 478 74Z" fill="#FFFFFF" opacity="0.55"/>
+                  </g>
+
+                  <!-- Window Panes -->
+                  <line x1="360" y1="34" x2="360" y2="190" stroke="#FFFDF7" stroke-width="7"/>
+                  <line x1="360" y1="34" x2="360" y2="190" stroke="#4A3528" stroke-width="2.5"/>
+                  <line x1="242" y1="112" x2="478" y2="112" stroke="#FFFDF7" stroke-width="7"/>
+                  <line x1="242" y1="112" x2="478" y2="112" stroke="#4A3528" stroke-width="2.5"/>
+                </g>
+
+                <!-- Inner frame outline -->
+                <rect x="242" y="34" width="236" height="156" rx="18" fill="none" stroke="#4A3528" stroke-width="2.8"/>
+
+                <!-- Pastel Curtains -->
+                <path d="M234 28H266C262 84 252 135 234 180Z" fill="#FFB5C5" stroke="#4A3528" stroke-width="2.6" stroke-linejoin="round"/>
+                <path d="M486 28H454C458 84 468 135 486 180Z" fill="#FFB5C5" stroke="#4A3528" stroke-width="2.6" stroke-linejoin="round"/>
+                <!-- Windowsill -->
+                <rect x="224" y="192" width="272" height="15" rx="7.5" fill="#F9E5C8" stroke="#4A3528" stroke-width="3"/>
+                <!-- Cute Potted Plant on Sill -->
+                <g transform="translate(260, 166)">
+                  <path d="M12 10C6 1 0 3 2 11C4 14 10 14 12 10Z" fill="#51CF66" stroke="#4A3528" stroke-width="2"/>
+                  <path d="M16 9C22 0 28 3 25 11C23 14 18 14 16 9Z" fill="#40C057" stroke="#4A3528" stroke-width="2"/>
+                  <path d="M14 9C12 -2 18 -3 17 8Z" fill="#69DB7C" stroke="#4A3528" stroke-width="2"/>
+                  <path d="M5 10H23L20 26H8Z" fill="#FF922B" stroke="#4A3528" stroke-width="2.3" stroke-linejoin="round"/>
+                  <rect x="3" y="8" width="22" height="5" rx="2.5" fill="#FFA94D" stroke="#4A3528" stroke-width="2"/>
+                </g>
+              </g>
+
+              <!-- ===== WALL CLOCK (SHOWS SIMULATED TIME) ===== -->
+              <g id="wallClock" transform="translate(115, 148)">
+                <circle cx="0" cy="0" r="36" fill="#FFD93D" stroke="#4A3528" stroke-width="3.2"/>
+                <circle cx="0" cy="0" r="28" fill="#FFFDF7" stroke="#4A3528" stroke-width="2.2"/>
+                <!-- Clock dots -->
+                <circle cx="0" cy="-21" r="2.2" fill="#4A3528"/>
+                <circle cx="21" cy="0" r="2.2" fill="#4A3528"/>
+                <circle cx="0" cy="21" r="2.2" fill="#4A3528"/>
+                <circle cx="-21" cy="0" r="2.2" fill="#4A3528"/>
+                <!-- Hands -->
+                <line id="clockHourHand" x1="0" y1="0" x2="0" y2="-13" stroke="#4A3528" stroke-width="3.4" stroke-linecap="round"/>
+                <line id="clockMinHand" x1="0" y1="0" x2="0" y2="-20" stroke="#FF6B6B" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="0" cy="0" r="3.5" fill="#4A3528"/>
+              </g>
+
+              <!-- ===== WALL ROOM THERMOMETER ===== -->
+              <g id="wallThermometer" transform="translate(618, 44)">
+                <rect x="0" y="0" width="96" height="156" rx="22" fill="#FFFDF7" stroke="#4A3528" stroke-width="3"/>
+                <text x="48" y="22" text-anchor="middle" font-size="11" font-weight="700" fill="#7B6050">ROOM</text>
+                <!-- Thermometer tube -->
+                <rect x="39" y="30" width="18" height="72" rx="9" fill="#EEF2F6" stroke="#4A3528" stroke-width="2.4"/>
+                <!-- Dynamic room mercury bar -->
+                <rect id="roomThermoFill" x="43" y="64" width="10" height="38" rx="5" fill="#54B8FF"/>
+                <!-- Bulb -->
+                <circle id="roomThermoBulb" cx="48" cy="107" r="14" fill="#54B8FF" stroke="#4A3528" stroke-width="2.6"/>
+                <circle cx="43.5" cy="102.5" r="3.2" fill="#FFFFFF" opacity="0.65"/>
+                <!-- Tick marks -->
+                <g stroke="#B09887" stroke-width="1.8" stroke-linecap="round">
+                  <line x1="62" y1="39" x2="69" y2="39"/>
+                  <line x1="62" y1="54" x2="67" y2="54"/>
+                  <line x1="62" y1="69" x2="69" y2="69"/>
+                  <line x1="62" y1="84" x2="67" y2="84"/>
+                </g>
+                <!-- Room temp numeric pill -->
+                <rect x="13" y="126" width="70" height="22" rx="11" fill="#E5F4FF" stroke="#4A3528" stroke-width="2"/>
+                <text id="roomThermoText" x="48" y="141" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1864AB">20°C</text>
+              </g>
+
+              <!-- ===== WOODEN KITCHEN COUNTERTOP ===== -->
+              <rect x="0" y="318" width="760" height="30" fill="url(#counterGrad)" stroke="#4A3528" stroke-width="3.2"/>
+              <rect x="0" y="348" width="760" height="82" fill="url(#counterFrontGrad)" stroke="#4A3528" stroke-width="3.2"/>
+              <!-- Cute countertop highlight -->
+              <line x1="16" y1="325" x2="744" y2="325" stroke="#FFE6BD" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+              <!-- Coaster mat under thermos -->
+              <ellipse cx="535" cy="332" rx="68" ry="12" fill="#FFE8A3" stroke="#4A3528" stroke-width="2.6"/>
+
+              <!-- ===== KETTLE HEATING BASE ===== -->
+              <g id="kettleBase">
+                <ellipse id="heaterGlow" cx="205" cy="316" rx="76" ry="18" fill="url(#heaterGlowGrad)" opacity="0"/>
+                <rect x="135" y="312" width="140" height="22" rx="10" fill="#6F5B4F" stroke="#4A3528" stroke-width="3"/>
+                <rect x="150" y="317" width="110" height="6" rx="3" fill="#8B7364"/>
+                <!-- Indicator LED -->
+                <circle id="baseLed" cx="255" cy="323" r="4.5" fill="#95D5B2" stroke="#4A3528" stroke-width="1.8"/>
+              </g>
+
+              <!-- ===== DRAG-TO-POUR HINT ARROW ===== -->
+              <g id="dragHint" opacity="0" style="pointer-events:none;">
+                <g class="drag-hint-arrow">
+                  <path d="M298 188 Q386 132 462 174" fill="none" stroke="#FF6B6B" stroke-width="5" stroke-dasharray="10 8" stroke-linecap="round"/>
+                  <path d="M451 160 L468 176 L446 181" fill="none" stroke="#FF6B6B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <rect x="318" y="128" width="132" height="26" rx="13" fill="#FFFDF7" stroke="#4A3528" stroke-width="2.4"/>
+                <text x="384" y="145" text-anchor="middle" font-size="11.5" font-weight="700" fill="#E04848">Drag or Tap Pour!</text>
+              </g>
+
+              <!-- ===== POURING WATER STREAM ===== -->
+              <g id="pourStream" opacity="0" style="pointer-events:none;">
+                <path id="pourArcOuter" d="M471 157 Q518 156 528 190 L542 190 Q531 146 473 148 Z" fill="#FF8787" stroke="#4A3528" stroke-width="2.4" stroke-linejoin="round"/>
+                <path id="pourArcShine" d="M479 152 Q518 153 534 185" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+                <circle class="pour-drop" cx="533" cy="182" r="4" fill="#FFFFFF" opacity="0.85"/>
+                <circle class="pour-drop d2" cx="540" cy="178" r="3.2" fill="#FFFFFF" opacity="0.85"/>
+                <circle class="pour-drop d3" cx="529" cy="187" r="2.8" fill="#FFFFFF" opacity="0.85"/>
+              </g>
+
+              <!-- ===== THERMOS FLASK STATION ===== -->
+              <g id="thermosGroup">
+                <!-- Heat Escape Waves (left & right of thermos, intensity scales with |dT/dt|) -->
+                <g id="heatWavesGroup" opacity="0">
+                  <!-- Right side waves -->
+                  <path class="heat-wave" d="M608 214 Q620 204 612 194 Q604 184 616 174" fill="none" stroke="#FF6B6B" stroke-width="3.6" stroke-linecap="round"/>
+                  <path class="heat-wave hw2" d="M614 256 Q626 246 618 236 Q610 226 622 216" fill="none" stroke="#FF922B" stroke-width="3.4" stroke-linecap="round"/>
+                  <path class="heat-wave hw3" d="M606 292 Q618 282 610 272 Q602 262 614 252" fill="none" stroke="#FF6B6B" stroke-width="3.2" stroke-linecap="round"/>
+                  <!-- Left side waves -->
+                  <path class="heat-wave-left" d="M462 214 Q450 204 458 194 Q466 184 454 174" fill="none" stroke="#FF6B6B" stroke-width="3.6" stroke-linecap="round"/>
+                  <path class="heat-wave-left hw2" d="M456 256 Q444 246 452 236 Q460 226 448 216" fill="none" stroke="#FF922B" stroke-width="3.4" stroke-linecap="round"/>
+                  <path class="heat-wave-left hw3" d="M464 292 Q452 282 460 272 Q468 262 456 252" fill="none" stroke="#FF6B6B" stroke-width="3.2" stroke-linecap="round"/>
+                </g>
+
+                <!-- Thermos Steam (when open / hot) -->
+                <g id="thermosSteam" opacity="0">
+                  <path class="steam-puff" d="M524 164 Q514 148 525 134 Q535 122 526 110" fill="none" stroke="#FFFFFF" stroke-width="5.5" stroke-linecap="round"/>
+                  <path class="steam-puff d2" d="M542 162 Q552 146 541 132 Q532 120 542 108" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+                  <circle class="steam-puff d3" cx="534" cy="144" r="7" fill="#FFFFFF"/>
+                </g>
+
+                <!-- Thermos Neck -->
+                <rect x="504" y="168" width="62" height="22" rx="8" fill="#E9ECEF" stroke="#4A3528" stroke-width="3"/>
+
+                <!-- Thermos Body Base -->
+                <rect id="thermosBody" x="476" y="184" width="118" height="146" rx="28" fill="#FFD166" stroke="#4A3528" stroke-width="3.5"/>
+
+                <!-- INSULATION SKIN 1: Bare Thin Metal Flask (0–25%) -->
+                <g id="skinBare" opacity="0">
+                  <rect x="479" y="187" width="112" height="140" rx="25" fill="#F1F3F5"/>
+                  <rect x="486" y="196" width="12" height="122" rx="6" fill="#FFFFFF" opacity="0.8"/>
+                  <rect x="476" y="184" width="118" height="146" rx="28" fill="none" stroke="#4A3528" stroke-width="3.5"/>
+                </g>
+
+                <!-- INSULATION SKIN 2: Cozy Knit Sweater Sleeve (26–55%) -->
+                <g id="skinKnit" opacity="1">
+                  <rect x="476" y="184" width="118" height="146" rx="28" fill="#FFB8C6" stroke="#4A3528" stroke-width="3.5"/>
+                  <!-- Knit stripes -->
+                  <rect x="479" y="200" width="112" height="14" fill="#FFE066" opacity="0.85"/>
+                  <rect x="479" y="294" width="112" height="14" fill="#91E5D0" opacity="0.85"/>
+                  <!-- Cozy yarn stitches -->
+                  <path d="M484 207 L492 203 L500 207 L508 203 L516 207 M556 207 L564 203 L572 207 L580 203 L586 207" stroke="#4A3528" stroke-width="1.8" fill="none" opacity="0.45"/>
+                  <rect x="476" y="184" width="118" height="146" rx="28" fill="none" stroke="#4A3528" stroke-width="3.5"/>
+                </g>
+
+                <!-- INSULATION SKIN 3: Quilted Thermo Jacket (56–85%) -->
+                <g id="skinJacket" opacity="0">
+                  <rect x="472" y="182" width="126" height="150" rx="30" fill="#66D9E8" stroke="#4A3528" stroke-width="3.5"/>
+                  <!-- Quilted puffs -->
+                  <line x1="474" y1="220" x2="596" y2="220" stroke="#22B8CF" stroke-width="3"/>
+                  <line x1="474" y1="258" x2="596" y2="258" stroke="#22B8CF" stroke-width="3"/>
+                  <line x1="474" y1="296" x2="596" y2="296" stroke="#22B8CF" stroke-width="3"/>
+                  <rect x="472" y="182" width="126" height="150" rx="30" fill="none" stroke="#4A3528" stroke-width="3.5"/>
+                </g>
+
+                <!-- INSULATION SKIN 4: Space Vacuum Super-Flask (86–100%) -->
+                <g id="skinVacuum" opacity="0">
+                  <rect x="468" y="180" width="134" height="154" rx="32" fill="url(#vacuumGrad)" stroke="#4A3528" stroke-width="3.5"/>
+                  <rect x="476" y="188" width="118" height="138" rx="26" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-dasharray="6 5" opacity="0.85"/>
+                  <!-- Sparkle stars -->
+                  <path d="M460 198 L463 190 L466 198 L474 201 L466 204 L463 212 L460 204 L452 201 Z" fill="#FFD93D" stroke="#4A3528" stroke-width="1.5"/>
+                  <path d="M604 282 L606.5 276 L609 282 L615 284.5 L609 287 L606.5 293 L604 287 L598 284.5 Z" fill="#FFD93D" stroke="#4A3528" stroke-width="1.5"/>
+                </g>
+
+                <!-- Thermos Front Water-Level Window -->
+                <rect x="502" y="206" width="66" height="96" rx="18" fill="#FFFDF8" stroke="#4A3528" stroke-width="2.8"/>
+                <g clip-path="url(#thermosWindowClip)">
+                  <rect id="thermosLiquid" x="500" y="304" width="70" height="0" fill="#FF6B6B"/>
+                  <!-- Top meniscus highlight -->
+                  <ellipse id="thermosSurface" cx="535" cy="304" rx="34" ry="5" fill="#FFA8A8" opacity="0"/>
+                </g>
+                <!-- Window glass shine -->
+                <rect x="508" y="213" width="8" height="36" rx="4" fill="#FFFFFF" opacity="0.65"/>
+                <rect x="502" y="206" width="66" height="96" rx="18" fill="none" stroke="#4A3528" stroke-width="2.8"/>
+
+                <!-- Cute Expressive Kawaii Face on Thermos -->
+                <g id="thermosFace" transform="translate(535, 256)">
+                  <circle cx="-13" cy="-2" r="3.3" fill="#4A3528"/>
+                  <circle cx="13" cy="-2" r="3.3" fill="#4A3528"/>
+                  <circle cx="-12" cy="-3.2" r="1.2" fill="#FFFFFF"/>
+                  <circle cx="14" cy="-3.2" r="1.2" fill="#FFFFFF"/>
+                  <ellipse id="thermosBlushL" cx="-19" cy="4" rx="4.2" ry="2.4" fill="#FF8787" opacity="0.7"/>
+                  <ellipse id="thermosBlushR" cx="19" cy="4" rx="4.2" ry="2.4" fill="#FF8787" opacity="0.7"/>
+                  <path id="thermosMouth" d="M-5 5 Q0 10 5 5" fill="none" stroke="#4A3528" stroke-width="2.6" stroke-linecap="round"/>
+                </g>
+
+                <!-- Thermos Cap / Lid (pops open during pour!) -->
+                <g id="thermosCap" transform="translate(0, 0)">
+                  <path d="M498 172 C498 151 510 144 535 144 C560 144 572 151 572 172 Z" fill="#FF9F43" stroke="#4A3528" stroke-width="3.2" stroke-linejoin="round"/>
+                  <rect x="495" y="166" width="80" height="12" rx="6" fill="#FFD93D" stroke="#4A3528" stroke-width="2.8"/>
+                  <ellipse cx="520" cy="154" rx="9" ry="3.5" fill="#FFFFFF" opacity="0.45"/>
+                </g>
+
+                <!-- Floating Live Thermos Temperature Badge -->
+                <g id="thermosTempBadge" transform="translate(535, 118)">
+                  <rect x="-44" y="-17" width="88" height="32" rx="16" fill="#FFFDF7" stroke="#4A3528" stroke-width="2.8"/>
+                  <text id="thermosTempText" x="0" y="4" text-anchor="middle" font-size="14.5" font-weight="700" fill="#7B6050">Empty</text>
+                </g>
+              </g>
+
+              <!-- ===== ELECTRIC KETTLE (INTERACTIVE & DRAGGABLE) ===== -->
+              <g id="kettleWrapper" transform="translate(0, 0)">
+                <g id="kettleGroup" class="kettle-group">
+                  <!-- Steam puffs from spout -->
+                  <g id="kettleSteam" opacity="0">
+                    <circle class="steam-puff" cx="288" cy="182" r="9" fill="#FFFFFF"/>
+                    <circle class="steam-puff d2" cx="298" cy="170" r="12" fill="#FFFFFF"/>
+                    <circle class="steam-puff d3" cx="284" cy="162" r="8" fill="#FFFFFF"/>
+                  </g>
+
+                  <!-- Kettle Handle -->
+                  <path d="M144 205 C106 205 104 282 146 286" fill="none" stroke="#4A3528" stroke-width="18" stroke-linecap="round"/>
+                  <path d="M144 205 C106 205 104 282 146 286" fill="none" stroke="#54B8FF" stroke-width="11" stroke-linecap="round"/>
+
+                  <!-- Kettle Spout -->
+                  <path d="M262 198 L296 188 L272 238 Z" fill="#9EE6CF" stroke="#4A3528" stroke-width="3.2" stroke-linejoin="round"/>
+
+                  <!-- Kettle Body -->
+                  <path d="M150 184 C144 220 138 278 150 308 C154 314 166 316 205 316 C244 316 256 314 260 308 C272 278 266 220 260 184 Z" fill="#9EE6CF" stroke="#4A3528" stroke-width="3.5" stroke-linejoin="round"/>
+                  <!-- Glossy highlight -->
+                  <path d="M156 196 C152 224 150 264 156 292" fill="none" stroke="#FFFFFF" stroke-width="5.5" stroke-linecap="round" opacity="0.55"/>
+
+                  <!-- Kettle Water Belly Window -->
+                  <rect x="163" y="218" width="84" height="74" rx="18" fill="#FFFDF8" stroke="#4A3528" stroke-width="2.8"/>
+                  <g clip-path="url(#kettleWindowClip)">
+                    <!-- Water fill -->
+                    <rect id="kettleLiquid" x="161" y="230" width="88" height="64" fill="#74C0FC"/>
+                    <ellipse id="kettleSurface" cx="205" cy="230" rx="44" ry="5.5" fill="#A5D8FF"/>
+                    <!-- Boiling bubbles -->
+                    <g id="kettleBubbles" opacity="0">
+                      <circle class="bubble-dot" cx="182" cy="264" r="4.5" fill="#FFFFFF" opacity="0.9"/>
+                      <circle class="bubble-dot b2" cx="202" cy="272" r="5.5" fill="#FFFFFF" opacity="0.9"/>
+                      <circle class="bubble-dot b3" cx="222" cy="266" r="4" fill="#FFFFFF" opacity="0.9"/>
+                      <circle class="bubble-dot b4" cx="192" cy="278" r="3.5" fill="#FFFFFF" opacity="0.9"/>
+                      <circle class="bubble-dot b5" cx="214" cy="276" r="4.8" fill="#FFFFFF" opacity="0.9"/>
+                    </g>
+                  </g>
+                  <rect x="163" y="218" width="84" height="74" rx="18" fill="none" stroke="#4A3528" stroke-width="2.8"/>
+
+                  <!-- Kettle Kawaii Face -->
+                  <g id="kettleFace" transform="translate(205, 257)">
+                    <circle cx="-15" cy="-2" r="3.5" fill="#4A3528"/>
+                    <circle cx="15" cy="-2" r="3.5" fill="#4A3528"/>
+                    <circle cx="-14" cy="-3.2" r="1.3" fill="#FFFFFF"/>
+                    <circle cx="16" cy="-3.2" r="1.3" fill="#FFFFFF"/>
+                    <ellipse id="kettleBlushL" cx="-22" cy="4" rx="4.5" ry="2.5" fill="#FF8787" opacity="0.55"/>
+                    <ellipse id="kettleBlushR" cx="22" cy="4" rx="4.5" ry="2.5" fill="#FF8787" opacity="0.55"/>
+                    <path id="kettleMouth" d="M-5.5 5 Q0 10.5 5.5 5" fill="none" stroke="#4A3528" stroke-width="2.6" stroke-linecap="round"/>
+                  </g>
+
+                  <!-- Kettle Lid -->
+                  <path d="M150 184 C156 164 176 158 205 158 C234 158 254 164 260 184 Z" fill="#54B8FF" stroke="#4A3528" stroke-width="3.2" stroke-linejoin="round"/>
+                  <circle cx="205" cy="154" r="8" fill="#FFD93D" stroke="#4A3528" stroke-width="2.8"/>
+
+                  <!-- Kettle Live Temp Pill -->
+                  <g transform="translate(205, 128)">
+                    <rect x="-40" y="-16" width="80" height="30" rx="15" fill="#FFFDF7" stroke="#4A3528" stroke-width="2.8"/>
+                    <text id="kettleTempText" x="0" y="4" text-anchor="middle" font-size="14" font-weight="700" fill="#1864AB">20°C</text>
+                  </g>
+                </g>
+              </g>
+            </svg>
+          </div>
+
+          <!-- PRIMARY STAGE ACTION BAR -->
+          <div class="stage-action-bar" id="stageActionBar">
+            <button class="pazu-btn btn-coral btn-big pulse-cta" id="primaryActionBtn">
+              🔥 Boil Water to 95°C
+            </button>
+          </div>
+        </div>
+
+        <!-- ========== 4 PAZU CONTROL CARDS ========== -->
+        <div class="controls-grid">
+          <!-- 1. Kettle Temperature -->
+          <div class="control-card theme-coral">
+            <div class="control-head">
+              <span class="control-label">🔥 Kettle Temp</span>
+              <span class="control-badge" id="kettleTargetBadge">95°C</span>
+            </div>
+            <input type="range" class="pazu-slider" id="kettleSlider" min="25" max="100" step="1" value="95" aria-label="Kettle target temperature in Celsius"/>
+            <div class="preset-row">
+              <button class="chip-btn" data-kettle="45">45° Warm</button>
+              <button class="chip-btn" data-kettle="75">75° Cocoa</button>
+              <button class="chip-btn active" data-kettle="95">95° Tea</button>
+              <button class="chip-btn" data-kettle="100">100° Boil</button>
+            </div>
+          </div>
+
+          <!-- 2. Room Temperature -->
+          <div class="control-card theme-sky">
+            <div class="control-head">
+              <span class="control-label"><span id="roomWeatherIcon">🌤️</span> Room Temp</span>
+              <span class="control-badge" id="roomTempBadge">20°C</span>
+            </div>
+            <input type="range" class="pazu-slider" id="roomSlider" min="-10" max="40" step="1" value="20" aria-label="Room temperature in Celsius"/>
+            <div class="preset-row">
+              <button class="chip-btn" data-room="0">❄️ 0° Snow</button>
+              <button class="chip-btn" data-room="10">🌬️ 10° Cool</button>
+              <button class="chip-btn active" data-room="20">🌤️ 20° Cozy</button>
+              <button class="chip-btn" data-room="35">☀️ 35° Hot</button>
+            </div>
+          </div>
+
+          <!-- 3. Isolation Factor -->
+          <div class="control-card theme-lavender">
+            <div class="control-head">
+              <span class="control-label">🧥 Isolation Factor</span>
+              <span class="control-badge" id="isoBadge">45%</span>
+            </div>
+            <input type="range" class="pazu-slider" id="isoSlider" min="0" max="100" step="1" value="45" aria-label="Thermos isolation factor percentage"/>
+            <div class="iso-meta">
+              <span class="iso-pill-name" id="isoName">Knit Sleeve</span>
+              <span id="isoKText">k = 0.017 /min</span>
+            </div>
+          </div>
+
+          <!-- 4. Speed of Time -->
+          <div class="control-card theme-mint">
+            <div class="control-head">
+              <span class="control-label">⏱️ Time Speed</span>
+              <span class="control-badge" id="elapsedBadge">0m 00s</span>
+            </div>
+            <div class="speed-row">
+              <button class="pazu-btn btn-yellow play-pause-btn" id="playPauseBtn" title="Pause or Resume time">⏸</button>
+              <div class="speed-pills" id="speedPills">
+                <button class="speed-pill" data-speed="1">1×</button>
+                <button class="speed-pill" data-speed="10">10×</button>
+                <button class="speed-pill active" data-speed="60">60×</button>
+                <button class="speed-pill" data-speed="300">300×</button>
+                <button class="speed-pill" data-speed="1200">1200×</button>
+              </div>
+            </div>
+            <div class="iso-meta">
+              <span id="speedHint">1 sec = 1 min</span>
+              <span>Drag graph to inspect!</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN: LIVE GRAPH + NEWTON'S LAW PANEL -->
+      <section class="right-col">
+        <!-- GRAPH CARD -->
+        <div class="panel-card">
+          <div class="panel-head">
+            <h2 class="panel-title">📈 Temperature vs. Time</h2>
+            <div class="panel-tools">
+              <button class="chip-btn active" id="toggleTheoryBtn" title="Show ideal Newton exponential curve">Ideal Curve</button>
+              <button class="chip-btn" id="saveCompareBtn" title="Save current curve to compare with next run">📌 Compare</button>
+              <button class="chip-btn" id="clearRunsBtn" title="Clear saved comparison curves" style="display:none;">Clear</button>
+            </div>
+          </div>
+
+          <div class="graph-wrap">
+            <canvas id="tempGraph"></canvas>
+          </div>
+
+          <div class="run-legend" id="runLegend">
+            <span class="legend-item">
+              <span class="legend-swatch" style="background:#FF6B6B;"></span>
+              <span>Current Run</span>
+            </span>
+            <span class="legend-item">
+              <span class="legend-swatch" style="background:#339AF0;"></span>
+              <span>Room Temp (Asymptote)</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- LIVE TELEMETRY & NEWTON'S LAW CARD -->
+        <div class="panel-card">
+          <div class="telemetry-grid">
+            <div class="metric-pill m-water">
+              <div class="metric-label">Water (T)</div>
+              <div class="metric-val" id="metricWater">--</div>
+            </div>
+            <div class="metric-pill m-room">
+              <div class="metric-label">Room (Tᵣ)</div>
+              <div class="metric-val" id="metricRoom">20.0°C</div>
+            </div>
+            <div class="metric-pill m-delta">
+              <div class="metric-label">Gap (ΔT)</div>
+              <div class="metric-val" id="metricDelta">--</div>
+            </div>
+            <div class="metric-pill m-rate">
+              <div class="metric-label">Rate (dT/dt)</div>
+              <div class="metric-val" id="metricRate">--</div>
+            </div>
+          </div>
+
+          <div class="formula-box">
+            <div class="formula-equation" aria-label="Newton's Law of Cooling Formula">
+              <span class="f-var f-water">T(t)</span>
+              <span>=</span>
+              <span class="f-var f-room" id="eqRoom">20°</span>
+              <span>+ (</span>
+              <span class="f-var f-water" id="eqStart">95°</span>
+              <span>−</span>
+              <span class="f-var f-room" id="eqRoom2">20°</span>
+              <span>) · e</span>
+              <sup>−<span class="f-var f-k" id="eqK">0.017</span>·<span class="f-var f-t" id="eqTime">0m</span></sup>
+            </div>
+
+            <div class="heat-flow-row">
+              <span class="heat-flow-label">Heat Escape:</span>
+              <div class="heat-meter-track">
+                <div class="heat-meter-fill" id="heatMeterFill"></div>
+              </div>
+              <span class="heat-flow-tag" id="heatFlowTag">Waiting</span>
+            </div>
+
+            <div class="formula-takeaway" id="formulaTakeaway">
+              <strong>Newton’s Law:</strong> Cooling speed is proportional to the temperature difference <strong>ΔT = T − Tᵣ</strong>. Hotter water loses heat fast at first, then gently flattens out at room temperature!
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ========== STAR TOAST ========== -->
+  <div class="star-toast" id="starToast" role="status" aria-live="polite">
+    <span>⭐</span>
+    <span id="starToastText">Mission Complete!</span>
+  </div>
+
+  <!-- ========== DISCOVERY MISSIONS MODAL ========== -->
+  <div class="modal-backdrop" id="missionsModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-labelledby="missionsTitle">
+      <div class="modal-header">
+        <h2 id="missionsTitle">⭐ Discovery Missions</h2>
+        <button class="pazu-btn btn-cream icon-only" data-close-modal="missionsModal" aria-label="Close">✕</button>
+      </div>
+      <div class="mission-list" id="missionList"></div>
+    </div>
+  </div>
+
+  <!-- ========== HOW IT WORKS MODAL ========== -->
+  <div class="modal-backdrop" id="guideModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-labelledby="guideTitle">
+      <div class="modal-header">
+        <h2 id="guideTitle">🍎 How Newton’s Law of Cooling Works</h2>
+        <button class="pazu-btn btn-cream icon-only" data-close-modal="guideModal" aria-label="Close">✕</button>
+      </div>
+      <div class="guide-steps">
+        <div class="guide-card">
+          <h4>1. Big Temperature Gap = Fast Cooling!</h4>
+          <p>When boiling 95°C water meets a cool 20°C room, the gap (ΔT = 75°C) is huge, so heat escapes super quickly and the graph drops steeply.</p>
+        </div>
+        <div class="guide-card">
+          <h4>2. Small Gap = Slow Cooling (The Curved Tail!)</h4>
+          <p>As the water gets closer to room temperature, ΔT shrinks, so heat escapes slower and slower. That creates Newton’s famous exponential curve that flattens toward the dashed blue Room Temp line!</p>
+        </div>
+        <div class="guide-card">
+          <h4>3. Isolation Factor Controls “k”</h4>
+          <p>Better insulation traps heat inside the thermos (smaller <strong>k</strong>), stretching the curve out so your tea stays cozy for hours. Try pinning a run with <strong>📌 Compare</strong> and testing 10% vs 90% isolation!</p>
+        </div>
+        <div class="guide-card">
+          <h4>4. Even Cold Water in a Hot Room Obeys It!</h4>
+          <p>Set Kettle Temp to 25°C and Room Temp to 40°C — the curve flips upward and warms toward room temperature using the exact same equation!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script defer src="js/audio.js"></script>
+  <script defer src="js/graph.js"></script>
+  <script defer src="js/game.js"></script>
+</body>
+</html>
